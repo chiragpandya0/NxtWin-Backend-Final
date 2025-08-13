@@ -1628,8 +1628,8 @@ export default function BidPage() {
             deadline:
               new Date(data.bid.endTime) > new Date()
                 ? `Ends ${new Date(data.bid.endTime).toLocaleDateString()}`
-                : "Expired",
-            context: `Market analysis for ${data.bid.category.toLowerCase()} prediction`,
+                : "Today",
+            context: `Make correct prediction and win big!`,
             marketNews: `Current Yes price: ₹${dynamicYesPrice}, Volume: ₹${data.bid.volume}`,
             optionA: "Yes",
             optionB: "No",
