@@ -488,11 +488,11 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
   }
 
   return (
-    <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+    <Card className="border-gray-200 bg-orange-50 dark:bg-orange-950/20">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+        <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
           <Crown className="h-5 w-5" />
-          Admin: Event Resolution
+          Event Resolution
         </CardTitle>
       </CardHeader>
       <CardContent>
