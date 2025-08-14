@@ -28,6 +28,14 @@ import {
   WifiOff,
   History,
   BookOpen,
+  // Add weather-related icons
+  Cloud,
+  Sun,
+  MapPin,
+  Thermometer,
+  Droplets,
+  Wind,
+  Eye,
 } from "lucide-react";
 
 // UI Components
@@ -139,7 +147,7 @@ const getAvailableQuantityAtPrice = (orderDepth, selectedOption, price) => {
   return availableQuantity;
 };
 
-// Order Book Component
+// Order Book Component - Updated with clearer labels
 function OrderBook({ orderDepth, currentYesPrice }) {
   const formatQuantity = (qty) => {
     if (qty >= 1000) return `${(qty / 1000).toFixed(1)}k`;
@@ -171,8 +179,11 @@ function OrderBook({ orderDepth, currentYesPrice }) {
             <div className="bg-green-50 dark:bg-green-950/20 p-3 border-b">
               <div className="flex justify-between text-xs font-medium">
                 <span>PRICE</span>
-                <span>Pending YES Orders</span>
+                <span>Available YES Orders</span>
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Place NO order at these prices to match
+              </p>
             </div>
             <div className="max-h-48 overflow-y-auto">
               {yesOrders.length > 0 ? (
@@ -201,7 +212,7 @@ function OrderBook({ orderDepth, currentYesPrice }) {
                 ))
               ) : (
                 <div className="p-4 text-center text-muted-foreground text-sm">
-                  No YES orders
+                  No YES orders available
                 </div>
               )}
             </div>
@@ -212,8 +223,11 @@ function OrderBook({ orderDepth, currentYesPrice }) {
             <div className="bg-red-50 dark:bg-red-950/20 p-3 border-b">
               <div className="flex justify-between text-xs font-medium">
                 <span>PRICE</span>
-                <span>Pending NO Orders</span>
+                <span>Available NO Orders</span>
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Place YES order at these prices to match
+              </p>
             </div>
             <div className="max-h-48 overflow-y-auto">
               {noOrders.length > 0 ? (
@@ -242,7 +256,7 @@ function OrderBook({ orderDepth, currentYesPrice }) {
                 ))
               ) : (
                 <div className="p-4 text-center text-muted-foreground text-sm">
-                  No NO orders
+                  No NO orders available
                 </div>
               )}
             </div>
@@ -259,15 +273,18 @@ function UserOrderHistory({ userOrders }) {
     switch (status.toLowerCase()) {
       case "filled":
         return (
-          <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-            Filled
+          <Badge
+            variant="default"
+            className=" border-green-400 bg-transparnent text-green-400 hover:bg-green-600"
+          >
+            Executed
           </Badge>
         );
       case "partly_filled":
         return (
           <Badge
             variant="default"
-            className="bg-yellow-500 hover:bg-yellow-600"
+            className="  border-b-yellow-500 bg-transparnent text-green-400 hover:bg-yellow-600"
           >
             Partly Filled
           </Badge>
@@ -384,6 +401,7 @@ function UserOrderHistory({ userOrders }) {
 // Update EventResolutionPanel component
 function EventResolutionPanel({ market, clerkUser, setMarket }) {
   const [isResolving, setIsResolving] = useState(false);
+  const [isUpdatingWeather, setIsUpdatingWeather] = useState(false);
 
   // Check if user is admin (modify this logic as needed)
   const isAdmin = clerkUser?.id === "user_31EJ9jzTGNPdgsTBT6YFl96E8of";
@@ -403,18 +421,15 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
     setIsResolving(true);
 
     try {
-      const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/resolve-event",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            bidId: market.id,
-            resolution,
-            clerkId: clerkUser.id,
-          }),
-        }
-      );
+      const response = await fetch("http://localhost:5500/api/resolve-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bidId: market.id,
+          resolution,
+          clerkId: clerkUser.id,
+        }),
+      });
 
       const data = await response.json();
 
@@ -443,6 +458,47 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
       });
     } finally {
       setIsResolving(false);
+    }
+  };
+
+  // NEW: Handle weather update
+  const handleUpdateWeather = async () => {
+    if (!clerkUser?.id) return;
+
+    setIsUpdatingWeather(true);
+
+    try {
+      const response = await fetch(
+        "http://localhost:5500/api/admin/update-weather",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clerkId: clerkUser.id,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("🌤️ Market Data Updated!", {
+          description: "Weather data has been refreshed and sent to all users",
+          duration: 5000,
+        });
+      } else {
+        toast.error(`Failed to update weather: ${data.error}`, {
+          description: data.details || "Please try again",
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error("Error updating weather:", error);
+      toast.error("Network error. Please try again.", {
+        duration: 4000,
+      });
+    } finally {
+      setIsUpdatingWeather(false);
     }
   };
 
@@ -488,11 +544,11 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
   }
 
   return (
-    <Card className="border-gray-200 bg-orange-50 dark:bg-orange-950/20">
+    <Card className="border-gray-600 bg-orange-50 dark:bg-orange-950/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
           <Crown className="h-5 w-5" />
-          Event Resolution
+          Admin Controls
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -500,38 +556,71 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Resolving an event is permanent and will distribute winnings
-              immediately.
+              Admin-only controls. Resolving an event is permanent and will
+              distribute winnings immediately.
             </AlertDescription>
           </Alert>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              onClick={() => handleResolveEvent("Yes")}
-              disabled={isResolving}
-              className="h-16 bg-green-500 hover:bg-green-600 text-white"
-              size="lg"
-            >
-              {isResolving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <TrendingUp className="mr-2 h-5 w-5" />
-              )}
-              Resolve YES
-            </Button>
+          {/* Event Resolution Controls */}
+          <div>
+            <h4 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">
+              Event Resolution
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                onClick={() => handleResolveEvent("Yes")}
+                disabled={isResolving}
+                className="h-16 bg-green-500 hover:bg-green-600 text-white"
+                size="lg"
+              >
+                {isResolving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <TrendingUp className="mr-2 h-5 w-5" />
+                )}
+                Resolve YES
+              </Button>
 
+              <Button
+                onClick={() => handleResolveEvent("No")}
+                disabled={isResolving}
+                className="h-16 bg-red-500 hover:bg-red-600 text-white"
+                size="lg"
+              >
+                {isResolving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <TrendingDown className="mr-2 h-5 w-5" />
+                )}
+                Resolve NO
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Market Data Controls */}
+          <div>
+            <h4 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">
+              Market Data
+            </h4>
             <Button
-              onClick={() => handleResolveEvent("No")}
-              disabled={isResolving}
-              className="h-16 bg-red-500 hover:bg-red-600 text-white"
+              onClick={handleUpdateWeather}
+              disabled={isUpdatingWeather}
+              className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white"
               size="lg"
             >
-              {isResolving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {isUpdatingWeather ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating Market Data...
+                </>
               ) : (
-                <TrendingDown className="mr-2 h-5 w-5" />
+                <>
+                  <Cloud className="mr-2 h-5 w-5" />
+                  Update Market Data
+                </>
               )}
-              Resolve NO
             </Button>
           </div>
         </div>
@@ -631,14 +720,11 @@ function OrderPanel({
 
       console.log("Placing order with data:", orderData);
 
-      const orderResponse = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/order",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderData),
-        }
-      );
+      const orderResponse = await fetch("http://localhost:5500/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData),
+      });
 
       let orderResult;
       try {
@@ -773,7 +859,7 @@ function OrderPanel({
             onClick={() => handleOptionChange("NO")}
             className={`h-14 ${
               selectedOption === "NO"
-                ? "bg-red-400 hover:bg-red-500 text-white"
+                ? "bg-red-500 hover:bg-red-500 text-white"
                 : "border-red-200 text-red-400 hover:bg-red-50"
             }`}
             disabled={isPlacingOrder || isEventResolved}
@@ -1138,6 +1224,237 @@ function ConnectionStatus({ isConnected, userCount }) {
   );
 }
 
+// Updated Weather Component - News feed style with stacked cards
+function WeatherWidget({ socket }) {
+  const [weatherHistory, setWeatherHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Function to fetch weather from database
+  const fetchWeatherFromDB = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch("http://localhost:5500/api/get/weather");
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(
+            "No weather data available. Please ask admin to update market data."
+          );
+        }
+        throw new Error("Failed to fetch weather data");
+      }
+
+      const data = await response.json();
+
+      // Set the weather history from database (don't add to existing, replace it)
+      if (data.weatherHistory && data.weatherHistory.length > 0) {
+        const transformedHistory = data.weatherHistory.map(
+          (weather, index) => ({
+            ...weather,
+            id: weather._id || `${Date.now()}_${index}`,
+            fetchedAt: new Date(weather.fetchedAt || weather.createdAt),
+          })
+        );
+
+        console.log("Setting weather history from DB:", transformedHistory);
+        setWeatherHistory(transformedHistory);
+      }
+    } catch (err) {
+      console.error("Weather fetch error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Initial fetch from database
+    fetchWeatherFromDB();
+  }, []);
+
+  // Listen for real-time weather updates via socket
+  useEffect(() => {
+    if (socket?.current) {
+      socket.current.on("weatherUpdate", (data) => {
+        console.log("Received weather update:", data);
+
+        // Add new weather data to history (only add if it's truly new)
+        setWeatherHistory((prev) => {
+          const newEntry = {
+            ...data.weather,
+            id: data.weather._id || Date.now(),
+            fetchedAt: new Date(
+              data.weather.fetchedAt || data.weather.createdAt
+            ),
+          };
+
+          // Check if this entry already exists to avoid duplicates
+          const existingEntry = prev.find(
+            (entry) =>
+              entry.id === newEntry.id ||
+              entry.fetchedAt.getTime() === newEntry.fetchedAt.getTime()
+          );
+
+          if (existingEntry) {
+            console.log("Weather entry already exists, not adding duplicate");
+            return prev;
+          }
+
+          console.log("Adding new weather entry:", newEntry);
+          // Add new entry at the beginning and keep only 4 latest
+          const updated = [newEntry, ...prev].slice(0, 4);
+          return updated;
+        });
+
+        setError(null);
+
+        // Show notification to user
+        toast.success("🌤️ Weather data updated!", {
+          description: "New market data has been refreshed by admin",
+          duration: 4000,
+        });
+      });
+
+      return () => {
+        socket.current?.off("weatherUpdate");
+      };
+    }
+  }, [socket]);
+
+  const getWeatherIcon = (description) => {
+    const desc = description?.toLowerCase() || "";
+    if (desc.includes("sunny") || desc.includes("clear"))
+      return <Sun className="h-4 w-4 text-yellow-500" />;
+    if (desc.includes("cloud"))
+      return <Cloud className="h-4 w-4 text-gray-500" />;
+    if (desc.includes("rain"))
+      return <Droplets className="h-4 w-4 text-blue-500" />;
+    return <Cloud className="h-4 w-4 text-gray-500" />;
+  };
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  if (loading && weatherHistory.length === 0) {
+    return (
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-center space-y-2">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground ml-2">
+              Loading weather...
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error && weatherHistory.length === 0) {
+    return (
+      <Card className="mb-4 border-red-200 bg-red-50 dark:bg-red-950/20">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm">{error}</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (weatherHistory.length === 0) {
+    return (
+      <Card className="mb-4 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm">
+              No weather data available. Ask admin to update market data.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3 mb-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-3">
+        <Cloud className="h-5 w-5 text-blue-600" />
+        <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+          Live Weather Updates
+        </h3>
+      </div>
+
+      {/* Weather Cards - News feed style */}
+      {weatherHistory.map((weather, index) => {
+        const { current, location } = weather;
+        const isLatest = index === 0;
+
+        return (
+          <Card
+            key={weather.id}
+            className={`transition-all duration-300 ${
+              isLatest
+                ? "border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 shadow-md"
+                : "border-gray-600 bg-gray-50/50 dark:bg-gray-800/20"
+            }`}
+          >
+            <CardContent className="p-2">
+              <div className="flex items-center justify-between">
+                {/* Left side - Location and Weather */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3 w-3 text-blue-600" />
+                    <span className="text-xs font-medium text-blue-900 dark:text-blue-100">
+                      {location.name}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {getWeatherIcon(current.weather_descriptions?.[0])}
+                    <span className="text-sm font-bold text-blue-900 dark:text-blue-100">
+                      {current.temperature}°C
+                    </span>
+                  </div>
+
+                  <span className="text-xs text-blue-700 dark:text-blue-300">
+                    {current.weather_descriptions?.[0] || "Unknown"}
+                  </span>
+                </div>
+
+                {/* Right side - Time */}
+                <div className="flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300">
+                  <Clock className="h-3 w-3" />
+                  <span>{formatTime(weather.fetchedAt)}</span>
+                  {isLatest && (
+                    <Badge
+                      variant="default"
+                      className="bg-green-500 text-white text-xs px-1.5 py-0"
+                    >
+                      Latest
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function BidPage() {
   const { id } = useParams();
   const { user: clerkUser, isLoaded: userLoaded } = useUser();
@@ -1179,7 +1496,7 @@ export default function BidPage() {
 
     try {
       const userResponse = await fetch(
-        `https://nxtwin-backend-final.onrender.com/api/get/user/${clerkId}`
+        `http://localhost:5500/api/get/user/${clerkId}`
       );
       if (userResponse.ok) {
         const userData = await userResponse.json();
@@ -1213,7 +1530,7 @@ export default function BidPage() {
   // Socket.IO Connection Management
   useEffect(() => {
     // Initialize socket connection
-    socket.current = io("https://nxtwin-backend-final.onrender.com", {
+    socket.current = io("http://localhost:5500", {
       transports: ["websocket", "polling"],
     });
 
@@ -1512,7 +1829,7 @@ export default function BidPage() {
 
       try {
         const response = await fetch(
-          `https://nxtwin-backend-final.onrender.com/api/get/user/${clerkUser.id}`
+          `http://localhost:5500/api/get/user/${clerkUser.id}`
         );
         const data = await response.json();
 
@@ -1522,7 +1839,7 @@ export default function BidPage() {
           // Fetch user's orders for this bid with better error handling
           try {
             const ordersResponse = await fetch(
-              `https://nxtwin-backend-final.onrender.com/api/get/user-orders/${clerkUser.id}/${id}`
+              `http://localhost:5500/api/get/user-orders/${clerkUser.id}/${id}`
             );
             if (ordersResponse.ok) {
               const ordersData = await ordersResponse.json();
@@ -1550,7 +1867,7 @@ export default function BidPage() {
         } else {
           // Create user if doesn't exist
           const createResponse = await fetch(
-            "https://nxtwin-backend-final.onrender.com/api/create-user",
+            "http://localhost:5500/api/create-user",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1583,9 +1900,7 @@ export default function BidPage() {
     async function loadData() {
       setLoadingMarket(true);
       try {
-        const response = await fetch(
-          `https://nxtwin-backend-final.onrender.com/api/get/bid/${id}`
-        );
+        const response = await fetch(`http://localhost:5500/api/get/bid/${id}`);
         const data = await response.json();
 
         if (mount.current && data.bid) {
@@ -1595,7 +1910,7 @@ export default function BidPage() {
 
           try {
             const pricingResponse = await fetch(
-              `https://nxtwin-backend-final.onrender.com/api/get/dynamic-pricing/${id}`
+              `http://localhost:5500/api/get/dynamic-pricing/${id}`
             );
             if (pricingResponse.ok) {
               const pricingData = await pricingResponse.json();
@@ -1639,7 +1954,7 @@ export default function BidPage() {
           // Fetch real order depth for this market
           try {
             const depthResponse = await fetch(
-              `https://nxtwin-backend-final.onrender.com/api/get/order-depth/${id}`
+              `http://localhost:5500/api/get/order-depth/${id}`
             );
             if (depthResponse.ok) {
               const depthData = await depthResponse.json();
@@ -1742,14 +2057,11 @@ export default function BidPage() {
     setIsClaimingReward(true);
 
     try {
-      const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/claim-reward",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clerkId: clerkUser.id }),
-        }
-      );
+      const response = await fetch("http://localhost:5500/api/claim-reward", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clerkId: clerkUser.id }),
+      });
 
       const data = await response.json();
 
@@ -1918,19 +2230,12 @@ export default function BidPage() {
               </TabsContent>
 
               <TabsContent value="activity">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5" />
-                      Market News
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">
-                      {market?.marketNews || "No recent market news available."}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="space-y-4">
+                  {/* Weather Widget - Pass socket as prop */}
+                  <WeatherWidget socket={socket} />
+
+                  {/* Existing Market News */}
+                </div>
               </TabsContent>
 
               <TabsContent value="ai-analysis" className="space-y-4">
@@ -1970,6 +2275,7 @@ export default function BidPage() {
                     {aiResult?.error && (
                       <Alert variant="destructive">
                         <XCircle className="h-4 w-4" />
+
                         <AlertDescription>
                           Failed to analyze: {aiResult.error}
                         </AlertDescription>
