@@ -79,6 +79,9 @@ import {
   PRICING_CONFIG,
 } from "../../utils/pricing";
 
+// Import the new component
+import { ProfitLossAlert } from "../../components/ProfitLossAlert";
+
 // Add this helper function near the top with other utility functions
 const calculateDynamicPricing = (orderDepth) => {
   const yesOrders = orderDepth.yes || [];
@@ -131,16 +134,19 @@ const calculateDynamicPricing = (orderDepth) => {
   };
 };
 
+// Replace the getAvailableQuantityAtPrice function (around line 88)
+// Replace the getAvailableQuantityAtPrice function (around line 125)
 const getAvailableQuantityAtPrice = (orderDepth, selectedOption, price) => {
   // Calculate complementary price (YES + NO = 10)
-  const complementaryPrice = 10 - price;
+  const complementaryPrice = price;
 
-  // Get orders from the opposite option
-  const oppositeOrders =
-    selectedOption === "YES" ? orderDepth.no : orderDepth.yes;
+  // Get orders from the OPPOSITE option at the COMPLEMENTARY price
+  // This is because YES orders at price X can match with NO orders at price (10-X)
+  const oppositeOptionOrders =
+    selectedOption === "YES" ? orderDepth.yes : orderDepth.no;
 
-  // Find orders at the complementary price and sum their quantities
-  const availableQuantity = oppositeOrders
+  // Find orders at the COMPLEMENTARY price (not same price) and sum their quantities
+  const availableQuantity = oppositeOptionOrders
     .filter((order) => Math.abs(order.price - complementaryPrice) < 0.01) // Small epsilon for float comparison
     .reduce((total, order) => total + order.quantity, 0);
 
@@ -442,10 +448,35 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
           resolvedAt: new Date(),
         }));
 
-        toast.success(`🎉 Event Resolved: ${resolution} Won!`, {
-          description: `${data.totalUsers} users affected. Payouts distributed.`,
-          duration: 10000,
-        });
+        // Check if this event resolution is for the current user (has profit/loss data)
+        if (
+          data.profitLoss !== undefined &&
+          data.previousBalance !== undefined
+        ) {
+          // Show profit/loss alert for the current user
+          setProfitLossAlert({
+            isOpen: true,
+            eventTitle: data.eventTitle || market?.title || "Event",
+            resolution: data.resolution,
+            profitLoss: data.profitLoss,
+            previousBalance: data.previousBalance,
+            newBalance: data.newBalance,
+            winningOrders: data.winningOrders || [],
+            losingOrders: data.losingOrders || [],
+            refundedOrders: data.refundedOrders || [],
+          });
+
+          // Update balance if provided
+          if (data.newBalance !== undefined) {
+            setBalance(data.newBalance);
+          }
+        } else {
+          // Show general resolution toast for other users
+          toast.success(`🎉 Event Resolved: ${data.resolution} Won!`, {
+            description: "Check your balance for any winnings",
+            duration: 10000,
+          });
+        }
       } else {
         toast.error(`Failed to resolve event: ${data.error}`, {
           duration: 5000,
@@ -803,7 +834,9 @@ function OrderPanel({
   const isEventResolved = market?.status === "resolved";
 
   return (
-    <Card className="sticky top-6">
+    <Card>
+      {" "}
+      {/* Changed from top-6 to top-20 */}
       <CardHeader className="text-center">
         <CardTitle className="flex items-center justify-center gap-2">
           <Target className="h-5 w-5" />
@@ -815,7 +848,6 @@ function OrderPanel({
             : "Choose your prediction and stake amount"}
         </CardDescription>
       </CardHeader>
-
       <CardContent className="space-y-6">
         {/* Authentication Alert */}
         {!clerkUser?.id && !isEventResolved && (
@@ -928,10 +960,6 @@ function OrderPanel({
                     {availableQuantity} shares
                   </Badge>
                 </div>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  {availableQuantity} {selectedOption === "YES" ? "NO" : "YES"}{" "}
-                  orders waiting at ₹{formatPrice(10 - currentPrice)}
-                </p>
               </div>
             )}
 
@@ -1484,6 +1512,27 @@ export default function BidPage() {
     fallbackToDefault: true,
   });
 
+  // Add new state for platform metrics
+  const [platformMetrics, setPlatformMetrics] = useState({
+    totalMoneyCollected: 0,
+    maxLiability: 0,
+    platformProfit: 0,
+    isProfitable: false,
+  });
+
+  // Add new state for profit/loss alert
+  const [profitLossAlert, setProfitLossAlert] = useState({
+    isOpen: false,
+    eventTitle: "",
+    resolution: "",
+    profitLoss: 0,
+    previousBalance: 0,
+    newBalance: 0,
+    winningOrders: [],
+    losingOrders: [],
+    refundedOrders: [],
+  });
+
   const mount = useRef(false);
   const socket = useRef(null);
 
@@ -1525,6 +1574,11 @@ export default function BidPage() {
   // Function to update order depth - SIMPLIFIED
   const updateOrderDepth = (newDepthData) => {
     setOrderDepth(newDepthData.depth);
+  };
+
+  // ADD THIS MISSING FUNCTION
+  const handleCloseProfitLossAlert = () => {
+    setProfitLossAlert((prev) => ({ ...prev, isOpen: false }));
   };
 
   // Socket.IO Connection Management
@@ -1799,9 +1853,48 @@ export default function BidPage() {
           resolution: data.resolution,
         }));
 
-        toast.success(`🎉 Event Resolved: ${data.resolution} Won!`, {
-          description: "Check your balance for any winnings",
-          duration: 10000,
+        // Check if this event resolution is for the current user (has profit/loss data)
+        if (
+          data.profitLoss !== undefined &&
+          data.previousBalance !== undefined
+        ) {
+          // Show profit/loss alert for the current user
+          setProfitLossAlert({
+            isOpen: true,
+            eventTitle: data.eventTitle || market?.title || "Event",
+            resolution: data.resolution,
+            profitLoss: data.profitLoss,
+            previousBalance: data.previousBalance,
+            newBalance: data.newBalance,
+            winningOrders: data.winningOrders || [],
+            losingOrders: data.losingOrders || [],
+            refundedOrders: data.refundedOrders || [],
+          });
+
+          // Update balance if provided
+          if (data.newBalance !== undefined) {
+            setBalance(data.newBalance);
+          }
+        } else {
+          // Show general resolution toast for other users
+          toast.success(`🎉 Event Resolved: ${data.resolution} Won!`, {
+            description: "Check your balance for any winnings",
+            duration: 10000,
+          });
+        }
+      }
+    });
+
+    // Listen for platform metrics updates
+    socket.current.on("platformMetrics", (data) => {
+      console.log("Received platform metrics:", data);
+      setPlatformMetrics(data);
+
+      // Show house betting notification
+      if (data.executionType === "house") {
+        toast.success("🏠 Order executed by house!", {
+          description: `Platform profit: ₹${data.platformProfit.toFixed(2)}`,
+          duration: 5000,
         });
       }
     });
@@ -1813,7 +1906,7 @@ export default function BidPage() {
         socket.current.disconnect();
       }
     };
-  }, [id, clerkUser?.id]);
+  }, [id, clerkUser?.id, market?.title]); // Add market?.title to dependencies
 
   // Update socket room when user changes
   useEffect(() => {
@@ -2105,6 +2198,20 @@ export default function BidPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      {/* Profit/Loss Alert */}
+      <ProfitLossAlert
+        isOpen={profitLossAlert.isOpen}
+        onClose={handleCloseProfitLossAlert}
+        eventTitle={profitLossAlert.eventTitle}
+        resolution={profitLossAlert.resolution}
+        profitLoss={profitLossAlert.profitLoss}
+        previousBalance={profitLossAlert.previousBalance}
+        newBalance={profitLossAlert.newBalance}
+        winningOrders={profitLossAlert.winningOrders}
+        losingOrders={profitLossAlert.losingOrders}
+        refundedOrders={profitLossAlert.refundedOrders}
+      />
+
       <div className="container mx-auto pt-16 pb-6 px-4 max-w-7xl">
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left column - Main content */}
@@ -2366,8 +2473,58 @@ export default function BidPage() {
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
-            <Card>
+            {/* Platform Stats - Add padding to prevent overlap */}
+            <Card className="mt-6">
+              {" "}
+              {/* Added margin-top for better spacing */}
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Platform Stats
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span>Money Collected</span>
+                  <Badge className="bg-blue-100 text-blue-800">
+                    ₹{platformMetrics.totalMoneyCollected?.toFixed(2) || "0"}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Max Liability</span>
+                  <Badge className="bg-orange-100 text-orange-800">
+                    ₹{platformMetrics.maxLiability?.toFixed(2) || "0"}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Platform Profit</span>
+                  <Badge
+                    className={
+                      platformMetrics.platformProfit >= 0
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }
+                  >
+                    ₹{platformMetrics.platformProfit?.toFixed(2) || "0"}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Status</span>
+                  <Badge
+                    variant={
+                      platformMetrics.isProfitable ? "default" : "secondary"
+                    }
+                  >
+                    {platformMetrics.isProfitable ? "Profitable" : "At Risk"}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Activity - Add padding to prevent overlap */}
+            <Card className="mt-6">
+              {" "}
+              {/* Added margin-top for better spacing */}
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Activity className="h-4 w-4" />
