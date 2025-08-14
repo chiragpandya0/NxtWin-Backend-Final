@@ -47,7 +47,7 @@ export default function BidSummary({
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5500/api/get/bid-summary/${clerkUserId}/${bidId}`
+        `https://nxtwin-backend-final.onrender.com/api/get/bid-summary/${clerkUserId}/${bidId}`
       );
 
       if (response.ok) {

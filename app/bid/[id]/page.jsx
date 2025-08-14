@@ -427,15 +427,18 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
     setIsResolving(true);
 
     try {
-      const response = await fetch("http://localhost:5500/api/resolve-event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bidId: market.id,
-          resolution,
-          clerkId: clerkUser.id,
-        }),
-      });
+      const response = await fetch(
+        "https://nxtwin-backend-final.onrender.com/api/resolve-event",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bidId: market.id,
+            resolution,
+            clerkId: clerkUser.id,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -500,7 +503,7 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
 
     try {
       const response = await fetch(
-        "http://localhost:5500/api/admin/update-weather",
+        "https://nxtwin-backend-final.onrender.com/api/admin/update-weather",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -537,21 +540,17 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
   if (isResolved) {
     return (
       <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
-            <Award className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300 text-base">
+            <Award className="h-4 w-4" />
             Event Resolved
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-6">
-            <Award className="h-12 w-12 mx-auto mb-4 text-green-500" />
-            <h3 className="text-lg font-medium mb-2">
-              Event Has Been Resolved
-            </h3>
+        <CardContent className="pt-0">
+          <div className="text-center py-4">
             <Badge
               variant="default"
-              className="bg-green-500 hover:bg-green-600 text-white mb-4"
+              className="bg-green-500 hover:bg-green-600 text-white mb-3"
             >
               Winner: {market?.resolution || "Unknown"}
             </Badge>
@@ -575,85 +574,83 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
   }
 
   return (
-    <Card className="border-gray-600 bg-orange-50 dark:bg-orange-950/20">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-          <Crown className="h-5 w-5" />
+    <Card className="border-gray-200 bg-gray-50 dark:bg-gray-800/20 dark:border-gray-700">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-200 text-base">
+          <Crown className="h-4 w-4" />
           Admin Controls
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Admin-only controls. Resolving an event is permanent and will
-              distribute winnings immediately.
-            </AlertDescription>
-          </Alert>
+      <CardContent className="pt-0 space-y-4">
+        <Alert className="py-2">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            Admin-only controls. Event resolution is permanent.
+          </AlertDescription>
+        </Alert>
 
-          {/* Event Resolution Controls */}
-          <div>
-            <h4 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">
-              Event Resolution
-            </h4>
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                onClick={() => handleResolveEvent("Yes")}
-                disabled={isResolving}
-                className="h-16 bg-green-500 hover:bg-green-600 text-white"
-                size="lg"
-              >
-                {isResolving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <TrendingUp className="mr-2 h-5 w-5" />
-                )}
-                Resolve YES
-              </Button>
-
-              <Button
-                onClick={() => handleResolveEvent("No")}
-                disabled={isResolving}
-                className="h-16 bg-red-500 hover:bg-red-600 text-white"
-                size="lg"
-              >
-                {isResolving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <TrendingDown className="mr-2 h-5 w-5" />
-                )}
-                Resolve NO
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Market Data Controls */}
-          <div>
-            <h4 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">
-              Market Data
-            </h4>
+        {/* Event Resolution Controls */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Event Resolution
+          </h4>
+          <div className="flex gap-2">
             <Button
-              onClick={handleUpdateWeather}
-              disabled={isUpdatingWeather}
-              className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white"
-              size="lg"
+              onClick={() => handleResolveEvent("Yes")}
+              disabled={isResolving}
+              variant="outline"
+              size="sm"
+              className="flex-1 h-8 text-xs border-green-300 text-green-700 hover:bg-green-50 dark:border-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
             >
-              {isUpdatingWeather ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating Market Data...
-                </>
+              {isResolving ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
               ) : (
-                <>
-                  <Cloud className="mr-2 h-5 w-5" />
-                  Update Market Data
-                </>
+                <TrendingUp className="mr-1 h-3 w-3" />
               )}
+              Resolve YES
+            </Button>
+
+            <Button
+              onClick={() => handleResolveEvent("No")}
+              disabled={isResolving}
+              variant="outline"
+              size="sm"
+              className="flex-1 h-8 text-xs border-red-300 text-red-700 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              {isResolving ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <TrendingDown className="mr-1 h-3 w-3" />
+              )}
+              Resolve NO
             </Button>
           </div>
+        </div>
+
+        {/* Market Data Controls */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Market Data
+          </h4>
+          <Button
+            onClick={handleUpdateWeather}
+            disabled={isUpdatingWeather}
+            variant="outline"
+            size="sm"
+            className="w-full h-8 text-xs border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/20"
+          >
+            {isUpdatingWeather ? (
+              <>
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              <>
+                <Cloud className="mr-1 h-3 w-3" />
+                Update Market Data
+              </>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -751,11 +748,14 @@ function OrderPanel({
 
       console.log("Placing order with data:", orderData);
 
-      const orderResponse = await fetch("http://localhost:5500/api/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
-      });
+      const orderResponse = await fetch(
+        "https://nxtwin-backend-final.onrender.com/api/order",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderData),
+        }
+      );
 
       let orderResult;
       try {
@@ -1015,12 +1015,6 @@ function OrderPanel({
               </div>
             )}
 
-            {/* Price increment info */}
-            <p className="text-xs text-muted-foreground text-center">
-              Price adjusts in ₹{formatPrice(PRICING_CONFIG.PRICE_INCREMENT)}{" "}
-              increments
-            </p>
-
             {/* Reset to market price */}
             {customPrice !== null && (
               <div className="flex justify-center">
@@ -1264,7 +1258,9 @@ function WeatherWidget({ socket }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:5500/api/get/weather");
+      const response = await fetch(
+        "https://nxtwin-backend-final.onrender.com/api/get/weather"
+      );
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -1545,7 +1541,7 @@ export default function BidPage() {
 
     try {
       const userResponse = await fetch(
-        `http://localhost:5500/api/get/user/${clerkId}`
+        `https://nxtwin-backend-final.onrender.com/api/get/user/${clerkId}`
       );
       if (userResponse.ok) {
         const userData = await userResponse.json();
@@ -1584,7 +1580,7 @@ export default function BidPage() {
   // Socket.IO Connection Management
   useEffect(() => {
     // Initialize socket connection
-    socket.current = io("http://localhost:5500", {
+    socket.current = io("https://nxtwin-backend-final.onrender.com", {
       transports: ["websocket", "polling"],
     });
 
@@ -1922,7 +1918,7 @@ export default function BidPage() {
 
       try {
         const response = await fetch(
-          `http://localhost:5500/api/get/user/${clerkUser.id}`
+          `https://nxtwin-backend-final.onrender.com/api/get/user/${clerkUser.id}`
         );
         const data = await response.json();
 
@@ -1932,7 +1928,7 @@ export default function BidPage() {
           // Fetch user's orders for this bid with better error handling
           try {
             const ordersResponse = await fetch(
-              `http://localhost:5500/api/get/user-orders/${clerkUser.id}/${id}`
+              `https://nxtwin-backend-final.onrender.com/api/get/user-orders/${clerkUser.id}/${id}`
             );
             if (ordersResponse.ok) {
               const ordersData = await ordersResponse.json();
@@ -1960,7 +1956,7 @@ export default function BidPage() {
         } else {
           // Create user if doesn't exist
           const createResponse = await fetch(
-            "http://localhost:5500/api/create-user",
+            "https://nxtwin-backend-final.onrender.com/api/create-user",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1993,7 +1989,9 @@ export default function BidPage() {
     async function loadData() {
       setLoadingMarket(true);
       try {
-        const response = await fetch(`http://localhost:5500/api/get/bid/${id}`);
+        const response = await fetch(
+          `https://nxtwin-backend-final.onrender.com/api/get/bid/${id}`
+        );
         const data = await response.json();
 
         if (mount.current && data.bid) {
@@ -2003,7 +2001,7 @@ export default function BidPage() {
 
           try {
             const pricingResponse = await fetch(
-              `http://localhost:5500/api/get/dynamic-pricing/${id}`
+              `https://nxtwin-backend-final.onrender.com/api/get/dynamic-pricing/${id}`
             );
             if (pricingResponse.ok) {
               const pricingData = await pricingResponse.json();
@@ -2047,7 +2045,7 @@ export default function BidPage() {
           // Fetch real order depth for this market
           try {
             const depthResponse = await fetch(
-              `http://localhost:5500/api/get/order-depth/${id}`
+              `https://nxtwin-backend-final.onrender.com/api/get/order-depth/${id}`
             );
             if (depthResponse.ok) {
               const depthData = await depthResponse.json();
@@ -2150,11 +2148,14 @@ export default function BidPage() {
     setIsClaimingReward(true);
 
     try {
-      const response = await fetch("http://localhost:5500/api/claim-reward", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clerkId: clerkUser.id }),
-      });
+      const response = await fetch(
+        "https://nxtwin-backend-final.onrender.com/api/claim-reward",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clerkId: clerkUser.id }),
+        }
+      );
 
       const data = await response.json();
 
