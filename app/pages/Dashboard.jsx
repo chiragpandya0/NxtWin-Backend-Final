@@ -14,7 +14,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (isLoaded && isSignedIn && user) {
       // Send to backend
-      fetch("http://localhost:5500/api/create-user", {
+      fetch("https://nxtwin-backend-final.onrender.com/api/create-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
