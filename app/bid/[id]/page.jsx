@@ -427,18 +427,15 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
     setIsResolving(true);
 
     try {
-      const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/resolve-event",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            bidId: market.id,
-            resolution,
-            clerkId: clerkUser.id,
-          }),
-        }
-      );
+      const response = await fetch("http://localhost:5500/api/resolve-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bidId: market.id,
+          resolution,
+          clerkId: clerkUser.id,
+        }),
+      });
 
       const data = await response.json();
 
@@ -503,7 +500,7 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
 
     try {
       const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/admin/update-weather",
+        "http://localhost:5500/api/admin/update-weather",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -748,14 +745,11 @@ function OrderPanel({
 
       console.log("Placing order with data:", orderData);
 
-      const orderResponse = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/order",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderData),
-        }
-      );
+      const orderResponse = await fetch("http://localhost:5500/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData),
+      });
 
       let orderResult;
       try {
@@ -1258,9 +1252,7 @@ function WeatherWidget({ socket }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/get/weather"
-      );
+      const response = await fetch("http://localhost:5500/api/get/weather");
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -1541,7 +1533,7 @@ export default function BidPage() {
 
     try {
       const userResponse = await fetch(
-        `https://nxtwin-backend-final.onrender.com/api/get/user/${clerkId}`
+        `http://localhost:5500/api/get/user/${clerkId}`
       );
       if (userResponse.ok) {
         const userData = await userResponse.json();
@@ -1580,7 +1572,7 @@ export default function BidPage() {
   // Socket.IO Connection Management
   useEffect(() => {
     // Initialize socket connection
-    socket.current = io("https://nxtwin-backend-final.onrender.com", {
+    socket.current = io("http://localhost:5500", {
       transports: ["websocket", "polling"],
     });
 
@@ -1918,7 +1910,7 @@ export default function BidPage() {
 
       try {
         const response = await fetch(
-          `https://nxtwin-backend-final.onrender.com/api/get/user/${clerkUser.id}`
+          `http://localhost:5500/api/get/user/${clerkUser.id}`
         );
         const data = await response.json();
 
@@ -1928,7 +1920,7 @@ export default function BidPage() {
           // Fetch user's orders for this bid with better error handling
           try {
             const ordersResponse = await fetch(
-              `https://nxtwin-backend-final.onrender.com/api/get/user-orders/${clerkUser.id}/${id}`
+              `http://localhost:5500/api/get/user-orders/${clerkUser.id}/${id}`
             );
             if (ordersResponse.ok) {
               const ordersData = await ordersResponse.json();
@@ -1956,7 +1948,7 @@ export default function BidPage() {
         } else {
           // Create user if doesn't exist
           const createResponse = await fetch(
-            "https://nxtwin-backend-final.onrender.com/api/create-user",
+            "http://localhost:5500/api/create-user",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1989,9 +1981,7 @@ export default function BidPage() {
     async function loadData() {
       setLoadingMarket(true);
       try {
-        const response = await fetch(
-          `https://nxtwin-backend-final.onrender.com/api/get/bid/${id}`
-        );
+        const response = await fetch(`http://localhost:5500/api/get/bid/${id}`);
         const data = await response.json();
 
         if (mount.current && data.bid) {
@@ -2001,7 +1991,7 @@ export default function BidPage() {
 
           try {
             const pricingResponse = await fetch(
-              `https://nxtwin-backend-final.onrender.com/api/get/dynamic-pricing/${id}`
+              `http://localhost:5500/api/get/dynamic-pricing/${id}`
             );
             if (pricingResponse.ok) {
               const pricingData = await pricingResponse.json();
@@ -2045,7 +2035,7 @@ export default function BidPage() {
           // Fetch real order depth for this market
           try {
             const depthResponse = await fetch(
-              `https://nxtwin-backend-final.onrender.com/api/get/order-depth/${id}`
+              `http://localhost:5500/api/get/order-depth/${id}`
             );
             if (depthResponse.ok) {
               const depthData = await depthResponse.json();
@@ -2148,14 +2138,11 @@ export default function BidPage() {
     setIsClaimingReward(true);
 
     try {
-      const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/claim-reward",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clerkId: clerkUser.id }),
-        }
-      );
+      const response = await fetch("http://localhost:5500/api/claim-reward", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clerkId: clerkUser.id }),
+      });
 
       const data = await response.json();
 

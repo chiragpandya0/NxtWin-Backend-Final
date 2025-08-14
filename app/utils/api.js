@@ -1,6 +1,4 @@
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://nxtwin-backend-final.onrender.com";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5500";
 
 export const api = {
   // Get user balance

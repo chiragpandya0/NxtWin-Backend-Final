@@ -24,7 +24,7 @@ export default function Page() {
 
         // Fetch bids data from the backend
         const bidsResponse = await fetch(
-          "https://nxtwin-backend-final.onrender.com/api/get/bids"
+          "http://localhost:5500/api/get/bids"
         ).then((res) => res.json());
 
         // Transform backend data to match frontend format
