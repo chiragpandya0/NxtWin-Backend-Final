@@ -4,7 +4,7 @@ import "./globals.css";
 import { Toaster } from "./components/ui/sonner";
 import Header from "./components/layout/Header";
 import { ThemeProvider } from "next-themes";
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
