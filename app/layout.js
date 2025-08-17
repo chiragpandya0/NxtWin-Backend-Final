@@ -5,6 +5,7 @@ import { Toaster } from "./components/ui/sonner";
 import Header from "./components/layout/Header";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,11 +19,11 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <head>
-          <script
+          <Script
             async
             src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2888185726114325"
             crossorigin="anonymous"
-          ></script>
+          />
         </head>
         <body className={inter.className}>
           <ThemeProvider
