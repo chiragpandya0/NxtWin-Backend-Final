@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Probo Trading Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #1a202c; /* Darker background */
+        color: #e2e8f0; /* Light text */
+      }
+      .container {
+        background-color: #2d3748; /* Dark container */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2),
+          0 2px 4px -1px rgba(0, 0, 0, 0.12); /* Adjusted shadow for dark theme */
+      }
+      .order-book-row {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+      }
+      .order-book-bar {
+        height: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border-radius: 0.375rem;
+        transition: width 0.3s ease-in-out;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .order-book-bar.yes-side {
+        background-color: #10b981; /* Green for 'Yes' */
+      }
+      .order-book-bar.no-side {
+        background-color: #ef4444; /* Red for 'No' */
+      }
+      .order-book-bar-container {
+        display: flex;
+        height: 100%;
+      }
+      .range-slider-container {
+        position: relative;
+        width: 100%;
+      }
+      .range-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 10px;
+        background: #4a5568; /* Darker slider track */
+        outline: none;
+        opacity: 0.7;
+        -webkit-transition: 0.2s;
+        transition: opacity 0.2s;
+        border-radius: 5px;
+      }
+      .range-slider:hover {
+        opacity: 1;
+      }
+      .range-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #63b3ed; /* Lighter thumb for dark theme */
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      .range-slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #63b3ed; /* Lighter thumb for dark theme */
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      /* Style for the value display above the slider */
+      .slider-value {
+        position: absolute;
+        top: -25px;
+        transform: translateX(-50%);
+        background-color: #63b3ed; /* Lighter value box */
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body
+    class="p-4 bg-gray-900 text-gray-200 min-h-screen flex items-center justify-center"
+  >
+    <div
+      class="container mx-auto p-8 bg-gray-800 shadow-xl rounded-2xl max-w-5xl"
+    >
+      <h1 class="text-3xl font-bold text-center mb-6 text-white">
+        Probo Trading Simulator
+      </h1>
+      <p class="text-center text-gray-400 mb-8">
+        A more accurate simulator with fees, dynamic pricing, and an order book
+        depth graph.
+      </p>
+
+      <!-- Live Data Display -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-8">
+        <div class="p-4 bg-gray-700 text-white rounded-lg shadow-md">
+          <p class="text-xl font-bold" id="pool-value">₹0</p>
+          <p class="text-sm text-gray-400">Total Pool Value</p>
+        </div>
+        <div class="p-4 bg-yellow-500 text-white rounded-lg shadow-md">
+          <p class="text-xl font-bold" id="fees-collected">₹0</p>
+          <p class="text-sm text-gray-200">Fees Collected</p>
+        </div>
+        <div class="p-4 bg-gray-700 text-white rounded-lg shadow-md">
+          <p class="text-xl font-bold" id="pending-yes-count">0</p>
+          <p class="text-sm text-gray-400">Pending 'Yes' Bets</p>
+        </div>
+        <div class="p-4 bg-gray-700 text-white rounded-lg shadow-md">
+          <p class="text-xl font-bold" id="pending-no-count">0</p>
+          <p class="text-sm text-gray-400">Pending 'No' Bets</p>
+        </div>
+        <div class="p-4 bg-green-500 text-white rounded-lg shadow-md">
+          <p class="text-xl font-bold" id="matched-count">0</p>
+          <p class="text-sm text-gray-200">Matched Orders</p>
+        </div>
+      </div>
+
+      <div
+        class="mb-8 p-4 bg-purple-600 text-white rounded-lg shadow-md text-center"
+      >
+        <p class="text-2xl font-bold" id="probability-display">50%</p>
+        <p class="text-sm text-gray-200">Probability of YES</p>
+      </div>
+
+      <!-- Bet Controls -->
+      <div class="grid md:grid-cols-2 gap-8 mb-8">
+        <!-- Yes Bet Control -->
+        <div class="bg-gray-700 p-6 rounded-xl shadow-inner">
+          <h2 class="text-2xl font-semibold mb-4 text-green-400">
+            Place 'Yes' Bets
+          </h2>
+          <h3 class="text-lg font-medium text-blue-400 mb-2">
+            Recommended Price: <span id="yes-recommended-price">₹5.0</span>
+          </h3>
+          <div class="mb-4">
+            <label for="yes-bets" class="block text-gray-300 mb-1"
+              >Number of Bets</label
+            >
+            <input
+              type="number"
+              id="yes-bets"
+              value="100"
+              min="1"
+              class="w-full p-2 border border-gray-600 rounded-lg bg-gray-900 text-white"
+            />
+          </div>
+          <div class="mb-4">
+            <label for="yes-price-slider" class="block text-gray-300 mb-4"
+              >Target Price (₹0.5-₹9.5)</label
+            >
+            <div class="range-slider-container">
+              <input
+                type="range"
+                id="yes-price-slider"
+                class="range-slider"
+                min="0.5"
+                max="9.5"
+                value="5.0"
+                step="0.5"
+              />
+              <div class="slider-value" id="yes-slider-value">₹5.0</div>
+            </div>
+          </div>
+          <button
+            id="place-yes-btn"
+            class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-green-700 transition-colors"
+          >
+            Place Yes Bets
+          </button>
+        </div>
+
+        <!-- No Bet Control -->
+        <div class="bg-gray-700 p-6 rounded-xl shadow-inner">
+          <h2 class="text-2xl font-semibold mb-4 text-red-400">
+            Place 'No' Bets
+          </h2>
+          <h3 class="text-lg font-medium text-blue-400 mb-2">
+            Recommended Price: <span id="no-recommended-price">₹5.0</span>
+          </h3>
+          <div class="mb-4">
+            <label for="no-bets" class="block text-gray-300 mb-1"
+              >Number of Bets</label
+            >
+            <input
+              type="number"
+              id="no-bets"
+              value="100"
+              min="1"
+              class="w-full p-2 border border-gray-600 rounded-lg bg-gray-900 text-white"
+            />
+          </div>
+          <div class="mb-4">
+            <label for="no-price-slider" class="block text-gray-300 mb-4"
+              >Target Price (₹0.5-₹9.5)</label
+            >
+            <div class="range-slider-container">
+              <input
+                type="range"
+                id="no-price-slider"
+                class="range-slider"
+                min="0.5"
+                max="9.5"
+                value="5.0"
+                step="0.5"
+              />
+              <div class="slider-value" id="no-slider-value">₹5.0</div>
+            </div>
+          </div>
+          <button
+            id="place-no-btn"
+            class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-red-700 transition-colors"
+          >
+            Place No Bets
+          </button>
+        </div>
+      </div>
+
+      <!-- Probo Settings & Order Book -->
+      <div class="bg-gray-700 p-6 rounded-xl shadow-inner mb-8">
+        <h2 class="text-xl font-semibold mb-4 text-gray-200">Probo Settings</h2>
+        <div class="mb-4">
+          <label for="probo-fee" class="block text-gray-300 mb-1"
+            >Probo Fee (%)</label
+          >
+          <input
+            type="number"
+            id="probo-fee"
+            value="2"
+            min="0"
+            max="100"
+            step="0.1"
+            class="w-full p-2 border border-gray-600 rounded-lg bg-gray-900 text-white"
+          />
+        </div>
+        <button
+          id="update-fee-btn"
+          class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-blue-700 transition-colors"
+        >
+          Update Fee
+        </button>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8 mb-8">
+        <!-- Order Book Depth Graph -->
+        <div class="bg-gray-700 p-6 rounded-xl shadow-inner">
+          <h2 class="text-xl font-semibold mb-4 text-gray-200">
+            Order Book Depth
+          </h2>
+          <div id="depth-graph" class="max-h-96 overflow-y-auto">
+            <!-- Graph will be rendered here by JS -->
+          </div>
+        </div>
+
+        <!-- Simulation Logs -->
+        <div class="grid grid-rows-2 gap-4">
+          <!-- New Bets Log -->
+          <div class="bg-gray-700 p-6 rounded-xl shadow-inner overflow-y-auto">
+            <h2 class="text-xl font-semibold mb-4 text-gray-200">
+              New Bets Log
+            </h2>
+            <div id="new-bets-log" class="text-sm text-gray-400 space-y-1">
+              <p>All newly placed bets will be logged here.</p>
+            </div>
+          </div>
+          <!-- Matched Orders Log -->
+          <div class="bg-gray-700 p-6 rounded-xl shadow-inner overflow-y-auto">
+            <h2 class="text-xl font-semibold mb-4 text-gray-200">
+              Matched Orders Log
+            </h2>
+            <div
+              id="matched-orders-log"
+              class="text-sm text-gray-400 space-y-1"
+            >
+              <p>All matched orders will be logged here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Global State
+      let yesOrders = [];
+      let noOrders = [];
+      let totalPool = 0;
+      let matchedCount = 0;
+      let orderIdCounter = 0;
+      let proboFee = 2; // Default fee is 2%
+      let totalFeesCollected = 0;
+      let currentMarketPrice = null;
+
+      // UI elements
+      const yesBetsInput = document.getElementById("yes-bets");
+      const yesPriceSlider = document.getElementById("yes-price-slider");
+      const yesSliderValueEl = document.getElementById("yes-slider-value");
+      const noBetsInput = document.getElementById("no-bets");
+      const noPriceSlider = document.getElementById("no-price-slider");
+      const noSliderValueEl = document.getElementById("no-slider-value");
+      const placeYesBtn = document.getElementById("place-yes-btn");
+      const placeNoBtn = document.getElementById("place-no-btn");
+      const newBetsLogEl = document.getElementById("new-bets-log");
+      const matchedOrdersLogEl = document.getElementById("matched-orders-log");
+      const poolValueEl = document.getElementById("pool-value");
+      const feesCollectedEl = document.getElementById("fees-collected");
+      const pendingYesEl = document.getElementById("pending-yes-count");
+      const pendingNoEl = document.getElementById("pending-no-count");
+      const matchedCountEl = document.getElementById("matched-count");
+      const proboFeeInput = document.getElementById("probo-fee");
+      const updateFeeBtn = document.getElementById("update-fee-btn");
+      const depthGraphEl = document.getElementById("depth-graph");
+      const yesRecommendedPriceEl = document.getElementById(
+        "yes-recommended-price"
+      );
+      const noRecommendedPriceEl = document.getElementById(
+        "no-recommended-price"
+      );
+      const probabilityEl = document.getElementById("probability-display");
+
+      // Slider value update functions
+      function updateSliderValue(slider, valueEl) {
+        const price = parseFloat(slider.value);
+        valueEl.textContent = `₹${price.toFixed(1)}`;
+        const sliderRect = slider.getBoundingClientRect();
+        const valueRect = valueEl.getBoundingClientRect();
+        const thumbPosition =
+          (price - parseFloat(slider.min)) /
+          (parseFloat(slider.max) - parseFloat(slider.min));
+        const newPos = sliderRect.width * thumbPosition;
+        valueEl.style.left = `${newPos}px`;
+      }
+
+      yesPriceSlider.addEventListener("input", () =>
+        updateSliderValue(yesPriceSlider, yesSliderValueEl)
+      );
+      noPriceSlider.addEventListener("input", () =>
+        updateSliderValue(noPriceSlider, noSliderValueEl)
+      );
+
+      // Function to create a unique ID for each order
+      function getUniqueId() {
+        return "order-" + orderIdCounter++;
+      }
+
+      // Function to place a bulk of bets, without randomness
+      function placeBulkBets(type, count, centerPrice) {
+        const newOrders = [];
+        centerPrice = Math.round(centerPrice * 2) / 2; // Ensure prices are in 0.5 increments
+
+        for (let i = 0; i < count; i++) {
+          newOrders.push({
+            id: getUniqueId(),
+            type: type,
+            price: Math.max(0.5, Math.min(9.5, centerPrice)),
+          });
+        }
+
+        if (type === "yes") {
+          yesOrders.push(...newOrders);
+          logNewBet(
+            `Placed ${count} 'YES' bets at ₹${centerPrice.toFixed(1)}.`
+          );
+        } else {
+          noOrders.push(...newOrders);
+          logNewBet(`Placed ${count} 'NO' bets at ₹${centerPrice.toFixed(1)}.`);
+        }
+      }
+
+      // Core matching logic
+      function matchOrders() {
+        let matchesFound = 0;
+
+        yesOrders.sort((a, b) => b.price - a.price); // Descending for Yes (highest bid first)
+        noOrders.sort((a, b) => a.price - b.price); // Ascending for No (lowest bid first)
+
+        let i = 0;
+        let j = 0;
+
+        const matchedOrders = [];
+
+        while (i < yesOrders.length && j < noOrders.length) {
+          const yesOrder = yesOrders[i];
+          const noOrder = noOrders[j];
+
+          // Match condition: The Yes price plus the No price must equal 10.
+          if (yesOrder.price + noOrder.price === 10) {
+            matchedOrders.push({ yes: yesOrder, no: noOrder });
+            matchesFound++;
+            i++;
+            j++;
+          } else if (yesOrder.price + noOrder.price > 10) {
+            i++;
+          } else {
+            j++;
+          }
+        }
+
+        // Remove matched orders from the original arrays
+        if (matchedOrders.length > 0) {
+          const yesIdsToRemove = new Set(matchedOrders.map((m) => m.yes.id));
+          const noIdsToRemove = new Set(matchedOrders.map((m) => m.no.id));
+          yesOrders = yesOrders.filter(
+            (order) => !yesIdsToRemove.has(order.id)
+          );
+          noOrders = noOrders.filter((order) => !noIdsToRemove.has(order.id));
+        }
+
+        if (matchesFound > 0) {
+          logMatchedOrder(`Successfully matched ${matchesFound} orders.`);
+          // Update market price based on the last matched order
+          currentMarketPrice =
+            matchedOrders[matchedOrders.length - 1].yes.price;
+          totalPool += matchesFound * 10;
+          matchedCount += matchesFound;
+          totalFeesCollected += (proboFee / 100) * matchesFound * 10;
+        } else {
+          logMatchedOrder(`No new matches were found in this round.`);
+        }
+      }
+
+      // Function to create and update the order book depth graph
+      function updateOrderBookDepth() {
+        depthGraphEl.innerHTML = "";
+
+        const yesPrices = {};
+        const noPrices = {};
+
+        yesOrders.forEach(
+          (order) =>
+            (yesPrices[order.price] = (yesPrices[order.price] || 0) + 1)
+        );
+        noOrders.forEach(
+          (order) =>
+            (noPrices[10 - order.price] = (noPrices[10 - order.price] || 0) + 1)
+        ); // Use complementary price for No
+
+        const allPossiblePrices = Array.from(
+          { length: 19 },
+          (_, i) => 0.5 + i * 0.5
+        ); // Prices from 0.5 to 9.5
+        allPossiblePrices.reverse(); // Sort descending for a vertical graph
+
+        const maxOrders = Math.max(
+          ...Object.values(yesPrices),
+          ...Object.values(noPrices),
+          1 // Ensure a minimum for scaling
+        );
+
+        allPossiblePrices.forEach((price) => {
+          const yesCount = yesPrices[price] || 0;
+          const noCount = noPrices[price] || 0;
+
+          const yesWidth = (yesCount / maxOrders) * 100;
+          const noWidth = (noCount / maxOrders) * 100;
+
+          const row = document.createElement("div");
+          row.className = "order-book-row";
+          row.innerHTML = `
+                    <div class="order-book-bar-container justify-end">
+                        <div class="order-book-bar yes-side" style="width: ${yesWidth}%;">
+                            ${yesCount > 0 ? yesCount : ""}
+                        </div>
+                    </div>
+                    <span class="font-bold text-gray-400 text-center">₹${price.toFixed(
+                      1
+                    )}</span>
+                    <div class="order-book-bar-container justify-start">
+                        <div class="order-book-bar no-side" style="width: ${noWidth}%;">
+                            ${noCount > 0 ? noCount : ""}
+                        </div>
+                    </div>
+                `;
+          depthGraphEl.appendChild(row);
+        });
+      }
+
+      // Function to update the UI with new data
+      function updateUI() {
+        // Update recommended prices first based on current market price
+        if (currentMarketPrice !== null) {
+          yesRecommendedPriceEl.textContent = `₹${currentMarketPrice.toFixed(
+            1
+          )}`;
+          noRecommendedPriceEl.textContent = `₹${(
+            10 - currentMarketPrice
+          ).toFixed(1)}`;
+          yesPriceSlider.value = currentMarketPrice;
+          noPriceSlider.value = 10 - currentMarketPrice;
+        } else {
+          yesRecommendedPriceEl.textContent = `₹5.0`;
+          noRecommendedPriceEl.textContent = `₹5.0`;
+          yesPriceSlider.value = 5.0;
+          noPriceSlider.value = 5.0;
+        }
+        updateSliderValue(yesPriceSlider, yesSliderValueEl);
+        updateSliderValue(noPriceSlider, noSliderValueEl);
+
+        // Update probability display
+        const probability =
+          currentMarketPrice !== null
+            ? (currentMarketPrice * 10).toFixed(0)
+            : 50;
+        probabilityEl.textContent = `${probability}%`;
+
+        poolValueEl.textContent = `₹${totalPool.toFixed(2)}`;
+        feesCollectedEl.textContent = `₹${totalFeesCollected.toFixed(2)}`;
+        pendingYesEl.textContent = yesOrders.length;
+        pendingNoEl.textContent = noOrders.length;
+        matchedCountEl.textContent = matchedCount;
+        updateOrderBookDepth();
+      }
+
+      // Log messages to the new bets log
+      function logNewBet(message) {
+        const p = document.createElement("p");
+        p.textContent = message;
+        newBetsLogEl.prepend(p);
+        if (newBetsLogEl.children.length > 50) {
+          newBetsLogEl.removeChild(newBetsLogEl.lastChild);
+        }
+      }
+
+      // Log messages to the matched orders log
+      function logMatchedOrder(message) {
+        const p = document.createElement("p");
+        p.textContent = message;
+        matchedOrdersLogEl.prepend(p);
+        if (matchedOrdersLogEl.children.length > 50) {
+          matchedOrdersLogEl.removeChild(matchedOrdersLogEl.lastChild);
+        }
+      }
+
+      // Event Listeners for buttons
+      placeYesBtn.addEventListener("click", () => {
+        const count = parseInt(yesBetsInput.value);
+        const price = parseFloat(yesPriceSlider.value);
+        if (count > 0 && price >= 0.5 && price <= 9.5) {
+          placeBulkBets("yes", count, price);
+          matchOrders();
+          updateUI();
+        } else {
+          logNewBet(
+            "Invalid input for Yes bets. Number must be > 0 and price between 0.5 and 9.5."
+          );
+        }
+      });
+
+      placeNoBtn.addEventListener("click", () => {
+        const count = parseInt(noBetsInput.value);
+        const price = parseFloat(noPriceSlider.value);
+        if (count > 0 && price >= 0.5 && price <= 9.5) {
+          placeBulkBets("no", count, price);
+          matchOrders();
+          updateUI();
+        } else {
+          logNewBet(
+            "Invalid input for No bets. Number must be > 0 and price between 0.5 and 9.5."
+          );
+        }
+      });
+
+      updateFeeBtn.addEventListener("click", () => {
+        const newFee = parseFloat(proboFeeInput.value);
+        if (!isNaN(newFee) && newFee >= 0) {
+          proboFee = newFee;
+          logNewBet(`Probo Fee updated to ${newFee}%.`);
+        } else {
+          logNewBet("Invalid fee value. Please enter a number >= 0.");
+        }
+      });
+
+      // Initial UI render
+      window.onload = () => {
+        updateUI();
+        // Initial render of slider values
+        updateSliderValue(yesPriceSlider, yesSliderValueEl);
+        updateSliderValue(noPriceSlider, noSliderValueEl);
+      };
+    </script>
+  </body>
+</html>
