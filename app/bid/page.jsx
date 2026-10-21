@@ -1,8 +1,9 @@
 "use client";
+import { BASE_URL } from "../utils/api";
 import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { formatINRCompact } from "../utils/formatters";
+import { formatCurrencyCompact } from "../utils/formatters";
 import SpotlightCard from "../components/SpotlightCard";
 
 export default function Page() {
@@ -24,7 +25,7 @@ export default function Page() {
 
         // Fetch bids data from the backend
         const bidsResponse = await fetch(
-          "https://nxtwin-backend-final.onrender.com/api/get/bids"
+          `${BASE_URL}/api/get/bids`
         ).then((res) => res.json());
 
         // Transform backend data to match frontend format
@@ -253,7 +254,7 @@ function ProgressPulse({ value = 50 }) {
 /* ---------- cards (no channel/owner in grid) ---------- */
 
 function CardGrid({ market, selected, onSelect }) {
-  const volCompact = formatINRCompact(market.volume);
+  const volCompact = formatCurrencyCompact(market.volume);
   const yesPrice = market.yesPrice;
   const noPrice = 10 - yesPrice;
 
@@ -261,8 +262,8 @@ function CardGrid({ market, selected, onSelect }) {
   const yesShare = yesPrice * 10;
 
   // Check if prices are defined before displaying
-  const displayYesPrice = yesPrice ? `₹${yesPrice.toFixed(2)}` : "N/A";
-  const displayNoPrice = noPrice ? `₹${noPrice.toFixed(2)}` : "N/A";
+  const displayYesPrice = yesPrice ? `£${yesPrice.toFixed(2)}` : "N/A";
+  const displayNoPrice = noPrice ? `£${noPrice.toFixed(2)}` : "N/A";
 
   // Check if event is resolved
   const isResolved = market.status === "resolved";
@@ -313,7 +314,7 @@ function CardGrid({ market, selected, onSelect }) {
 
           <div className="flex items-center justify-between gap-3">
             <div className="text-xs text-slate-300 truncate">
-              <span className="text-xs text-slate-300">Vol: ₹{volCompact}</span>
+              <span className="text-xs text-slate-300">Vol: £{volCompact}</span>
             </div>
           </div>
 

@@ -5,8 +5,8 @@ import { useEffect } from "react";
 import Header from "../components/layout/Header";
 import Hero from "../components/sections/Hero";
 import Categories from "../components/sections/Categories";
-import Portfolio from "../components/sections/Portfolio";
 import Footer from "../components/layout/Footer";
+import { BASE_URL } from "../utils/api";
 
 const Dashboard = () => {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -14,7 +14,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (isLoaded && isSignedIn && user) {
       // Send to backend
-      fetch("https://nxtwin-backend-final.onrender.com/api/create-user", {
+      fetch(`${BASE_URL}/api/create-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -35,7 +35,6 @@ const Dashboard = () => {
       <main>
         <Hero />
         <Categories />
-        <Portfolio />
       </main>
       <Footer />
     </div>

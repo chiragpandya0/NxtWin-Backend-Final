@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Probo Trading Simulator</title>
+    <title>NxtWin Trading Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
@@ -107,7 +107,7 @@
       class="container mx-auto p-8 bg-gray-800 shadow-xl rounded-2xl max-w-5xl"
     >
       <h1 class="text-3xl font-bold text-center mb-6 text-white">
-        Probo Trading Simulator
+        NxtWin Trading Simulator
       </h1>
       <p class="text-center text-gray-400 mb-8">
         A more accurate simulator with fees, dynamic pricing, and an order book
@@ -117,11 +117,11 @@
       <!-- Live Data Display -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-8">
         <div class="p-4 bg-gray-700 text-white rounded-lg shadow-md">
-          <p class="text-xl font-bold" id="pool-value">₹0</p>
+          <p class="text-xl font-bold" id="pool-value">£0</p>
           <p class="text-sm text-gray-400">Total Pool Value</p>
         </div>
         <div class="p-4 bg-yellow-500 text-white rounded-lg shadow-md">
-          <p class="text-xl font-bold" id="fees-collected">₹0</p>
+          <p class="text-xl font-bold" id="fees-collected">£0</p>
           <p class="text-sm text-gray-200">Fees Collected</p>
         </div>
         <div class="p-4 bg-gray-700 text-white rounded-lg shadow-md">
@@ -153,7 +153,7 @@
             Place 'Yes' Bets
           </h2>
           <h3 class="text-lg font-medium text-blue-400 mb-2">
-            Recommended Price: <span id="yes-recommended-price">₹5.0</span>
+            Recommended Price: <span id="yes-recommended-price">£5.0</span>
           </h3>
           <div class="mb-4">
             <label for="yes-bets" class="block text-gray-300 mb-1"
@@ -169,7 +169,7 @@
           </div>
           <div class="mb-4">
             <label for="yes-price-slider" class="block text-gray-300 mb-4"
-              >Target Price (₹0.5-₹9.5)</label
+              >Target Price (£0.5-£9.5)</label
             >
             <div class="range-slider-container">
               <input
@@ -181,7 +181,7 @@
                 value="5.0"
                 step="0.5"
               />
-              <div class="slider-value" id="yes-slider-value">₹5.0</div>
+              <div class="slider-value" id="yes-slider-value">£5.0</div>
             </div>
           </div>
           <button
@@ -198,7 +198,7 @@
             Place 'No' Bets
           </h2>
           <h3 class="text-lg font-medium text-blue-400 mb-2">
-            Recommended Price: <span id="no-recommended-price">₹5.0</span>
+            Recommended Price: <span id="no-recommended-price">£5.0</span>
           </h3>
           <div class="mb-4">
             <label for="no-bets" class="block text-gray-300 mb-1"
@@ -214,7 +214,7 @@
           </div>
           <div class="mb-4">
             <label for="no-price-slider" class="block text-gray-300 mb-4"
-              >Target Price (₹0.5-₹9.5)</label
+              >Target Price (£0.5-£9.5)</label
             >
             <div class="range-slider-container">
               <input
@@ -226,7 +226,7 @@
                 value="5.0"
                 step="0.5"
               />
-              <div class="slider-value" id="no-slider-value">₹5.0</div>
+              <div class="slider-value" id="no-slider-value">£5.0</div>
             </div>
           </div>
           <button
@@ -342,7 +342,7 @@
       // Slider value update functions
       function updateSliderValue(slider, valueEl) {
         const price = parseFloat(slider.value);
-        valueEl.textContent = `₹${price.toFixed(1)}`;
+        valueEl.textContent = `£${price.toFixed(1)}`;
         const sliderRect = slider.getBoundingClientRect();
         const valueRect = valueEl.getBoundingClientRect();
         const thumbPosition =
@@ -380,11 +380,11 @@
         if (type === "yes") {
           yesOrders.push(...newOrders);
           logNewBet(
-            `Placed ${count} 'YES' bets at ₹${centerPrice.toFixed(1)}.`
+            `Placed ${count} 'YES' bets at £${centerPrice.toFixed(1)}.`
           );
         } else {
           noOrders.push(...newOrders);
-          logNewBet(`Placed ${count} 'NO' bets at ₹${centerPrice.toFixed(1)}.`);
+          logNewBet(`Placed ${count} 'NO' bets at £${centerPrice.toFixed(1)}.`);
         }
       }
 
@@ -483,7 +483,7 @@
                             ${yesCount > 0 ? yesCount : ""}
                         </div>
                     </div>
-                    <span class="font-bold text-gray-400 text-center">₹${price.toFixed(
+                    <span class="font-bold text-gray-400 text-center">£${price.toFixed(
                       1
                     )}</span>
                     <div class="order-book-bar-container justify-start">
@@ -500,17 +500,17 @@
       function updateUI() {
         // Update recommended prices first based on current market price
         if (currentMarketPrice !== null) {
-          yesRecommendedPriceEl.textContent = `₹${currentMarketPrice.toFixed(
+          yesRecommendedPriceEl.textContent = `£${currentMarketPrice.toFixed(
             1
           )}`;
-          noRecommendedPriceEl.textContent = `₹${(
+          noRecommendedPriceEl.textContent = `£${(
             10 - currentMarketPrice
           ).toFixed(1)}`;
           yesPriceSlider.value = currentMarketPrice;
           noPriceSlider.value = 10 - currentMarketPrice;
         } else {
-          yesRecommendedPriceEl.textContent = `₹5.0`;
-          noRecommendedPriceEl.textContent = `₹5.0`;
+          yesRecommendedPriceEl.textContent = `£5.0`;
+          noRecommendedPriceEl.textContent = `£5.0`;
           yesPriceSlider.value = 5.0;
           noPriceSlider.value = 5.0;
         }
@@ -524,8 +524,8 @@
             : 50;
         probabilityEl.textContent = `${probability}%`;
 
-        poolValueEl.textContent = `₹${totalPool.toFixed(2)}`;
-        feesCollectedEl.textContent = `₹${totalFeesCollected.toFixed(2)}`;
+        poolValueEl.textContent = `£${totalPool.toFixed(2)}`;
+        feesCollectedEl.textContent = `£${totalFeesCollected.toFixed(2)}`;
         pendingYesEl.textContent = yesOrders.length;
         pendingNoEl.textContent = noOrders.length;
         matchedCountEl.textContent = matchedCount;

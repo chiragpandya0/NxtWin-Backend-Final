@@ -14,7 +14,7 @@ import { Separator } from "./ui/separator";
 import {
   TrendingUp,
   TrendingDown,
-  DollarSign,
+  PoundSterling,
   Award,
   X,
   AlertCircle,
@@ -78,7 +78,7 @@ export function ProfitLossAlert({
     return "Break Even";
   };
 
-  const formatCurrency = (amount) => `₹${Math.abs(amount).toFixed(2)}`;
+  const formatCurrency = (amount) => `£${Math.abs(amount).toFixed(2)}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -172,11 +172,11 @@ export function ProfitLossAlert({
                           className="flex justify-between text-xs bg-green-50 dark:bg-green-950/20 p-2 rounded"
                         >
                           <span>
-                            {order.quantity} × {order.optionKey} @ ₹
+                            {order.quantity} × {order.optionKey} @ £
                             {order.price}
                           </span>
                           <span className="text-green-600 font-medium">
-                            +₹{order.winnings?.toFixed(2)}
+                            +£{order.winnings?.toFixed(2)}
                           </span>
                         </div>
                       ))}
@@ -202,11 +202,11 @@ export function ProfitLossAlert({
                           className="flex justify-between text-xs bg-red-50 dark:bg-red-950/20 p-2 rounded"
                         >
                           <span>
-                            {order.quantity} × {order.optionKey} @ ₹
+                            {order.quantity} × {order.optionKey} @ £
                             {order.price}
                           </span>
                           <span className="text-red-600">
-                            -₹{(order.price * order.quantity).toFixed(2)}
+                            -£{(order.price * order.quantity).toFixed(2)}
                           </span>
                         </div>
                       ))}
@@ -232,11 +232,11 @@ export function ProfitLossAlert({
                           className="flex justify-between text-xs bg-blue-50 dark:bg-blue-950/20 p-2 rounded"
                         >
                           <span>
-                            {order.quantity} × {order.optionKey} @ ₹
+                            {order.quantity} × {order.optionKey} @ £
                             {order.price}
                           </span>
                           <span className="text-blue-600">
-                            +₹{order.refund?.toFixed(2)}
+                            +£{order.refund?.toFixed(2)}
                           </span>
                         </div>
                       ))}

@@ -1,7 +1,7 @@
-export function formatINRCompact(n) {
-  if (n >= 10000000)
-    return `${+(n / 10000000).toFixed(n % 10000000 ? 1 : 0)}Cr`;
-  if (n >= 100000) return `${+(n / 100000).toFixed(n % 100000 ? 1 : 0)}L`;
+export function formatCurrencyCompact(n) {
+  if (n >= 1000000000)
+    return `${+(n / 1000000000).toFixed(n % 1000000000 ? 1 : 0)}B`;
+  if (n >= 1000000) return `${+(n / 1000000).toFixed(n % 1000000 ? 1 : 0)}M`;
   if (n >= 1000) return `${+(n / 1000).toFixed(n % 1000 ? 1 : 0)}K`;
   return `${n}`;
 }

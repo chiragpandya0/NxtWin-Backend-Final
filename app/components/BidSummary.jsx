@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { BASE_URL } from "../utils/api";
 import {
   Card,
   CardContent,
@@ -24,7 +25,7 @@ import {
   Award,
   X,
   RotateCcw,
-  DollarSign,
+  PoundSterling,
 } from "lucide-react";
 
 export default function BidSummary({
@@ -47,7 +48,7 @@ export default function BidSummary({
     setLoading(true);
     try {
       const response = await fetch(
-        `https://nxtwin-backend-final.onrender.com/api/get/bid-summary/${clerkUserId}/${bidId}`
+        `${BASE_URL}/api/get/bid-summary/${clerkUserId}/${bidId}`
       );
 
       if (response.ok) {
@@ -70,21 +71,21 @@ export default function BidSummary({
       return {
         icon: <TrendingUp className="h-4 w-4 text-green-600" />,
         label: "Won",
-        amount: `+₹${order.winnings?.toFixed(2) || "0.00"}`,
+        amount: `+£${order.winnings?.toFixed(2) || "0.00"}`,
         className: "text-green-600",
       };
     } else if (order.type === "refund") {
       return {
         icon: <RotateCcw className="h-4 w-4 text-blue-600" />,
         label: "Refunded",
-        amount: `+₹${order.refund?.toFixed(2) || "0.00"}`,
+        amount: `+£${order.refund?.toFixed(2) || "0.00"}`,
         className: "text-blue-600",
       };
     } else {
       return {
         icon: <TrendingDown className="h-4 w-4 text-red-600" />,
         label: "Lost",
-        amount: `-₹${(order.price * order.quantity).toFixed(2)}`,
+        amount: `-£${(order.price * order.quantity).toFixed(2)}`,
         className: "text-red-600",
       };
     }
@@ -135,7 +136,7 @@ export default function BidSummary({
               >
                 <CardContent className="p-6 text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
-                    <DollarSign
+                    <PoundSterling
                       className={`h-6 w-6 ${
                         isProfit
                           ? "text-green-600"
@@ -161,14 +162,14 @@ export default function BidSummary({
                         : "text-red-600"
                     }`}
                   >
-                    {isProfit ? "+" : ""}₹{Math.abs(netProfitLoss).toFixed(2)}
+                    {isProfit ? "+" : ""}£{Math.abs(netProfitLoss).toFixed(2)}
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
                     {isProfit
-                      ? "Congratulations! You made a profit 🎉"
+                      ? "This market closed in profit"
                       : isBreakeven
                       ? "You broke even on this market"
-                      : "Better luck next time"}
+                      : "This market closed at a loss"}
                   </p>
                 </CardContent>
               </Card>
@@ -178,7 +179,7 @@ export default function BidSummary({
                 <Card>
                   <CardContent className="p-4 text-center">
                     <div className="text-2xl font-bold text-blue-600">
-                      ₹{summary.totalInvested.toFixed(2)}
+                      £{summary.totalInvested.toFixed(2)}
                     </div>
                     <p className="text-sm text-muted-foreground">Invested</p>
                   </CardContent>
@@ -186,7 +187,7 @@ export default function BidSummary({
                 <Card>
                   <CardContent className="p-4 text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      ₹{summary.totalWinnings.toFixed(2)}
+                      £{summary.totalWinnings.toFixed(2)}
                     </div>
                     <p className="text-sm text-muted-foreground">Won</p>
                   </CardContent>
@@ -194,7 +195,7 @@ export default function BidSummary({
                 <Card>
                   <CardContent className="p-4 text-center">
                     <div className="text-2xl font-bold text-blue-600">
-                      ₹{summary.totalRefunds.toFixed(2)}
+                      £{summary.totalRefunds.toFixed(2)}
                     </div>
                     <p className="text-sm text-muted-foreground">Refunded</p>
                   </CardContent>
@@ -244,7 +245,7 @@ export default function BidSummary({
                               </span>
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              ₹{order.price.toFixed(2)} × {order.quantity} = ₹
+                              £{order.price.toFixed(2)} × {order.quantity} = £
                               {(order.price * order.quantity).toFixed(2)}
                             </div>
                           </Card>
@@ -286,10 +287,10 @@ export default function BidSummary({
                                     {order.optionKey.toUpperCase()}
                                   </Badge>
                                 </TableCell>
-                                <TableCell>₹{order.price.toFixed(2)}</TableCell>
+                                <TableCell>£{order.price.toFixed(2)}</TableCell>
                                 <TableCell>{order.quantity}</TableCell>
                                 <TableCell>
-                                  ₹{(order.price * order.quantity).toFixed(2)}
+                                  £{(order.price * order.quantity).toFixed(2)}
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-1">

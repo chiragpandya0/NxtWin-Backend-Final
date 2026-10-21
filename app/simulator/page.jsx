@@ -24,7 +24,7 @@ import {
   Activity,
   Zap,
   Target,
-  DollarSign,
+  PoundSterling,
   Users,
   Timer,
 } from "lucide-react";
@@ -36,7 +36,7 @@ export default function SimulatorPage() {
   const [totalPool, setTotalPool] = useState(0);
   const [matchedCount, setMatchedCount] = useState(0);
   const [orderIdCounter, setOrderIdCounter] = useState(0);
-  const [proboFee, setProboFee] = useState(2);
+  const [platformFee, setPlatformFee] = useState(2);
   const [totalFeesCollected, setTotalFeesCollected] = useState(0);
   const [currentMarketPrice, setCurrentMarketPrice] = useState(null);
   const [newBetsLog, setNewBetsLog] = useState([
@@ -107,12 +107,12 @@ export default function SimulatorPage() {
       setTotalPool((prev) => prev + matchedOrders.length * 10);
       setMatchedCount((prev) => prev + matchedOrders.length);
       setTotalFeesCollected(
-        (prev) => prev + (proboFee / 100) * matchedOrders.length * 10
+        (prev) => prev + (platformFee / 100) * matchedOrders.length * 10
       );
     } else {
       logMatchedOrder(`No new matches were found in this round.`);
     }
-  }, [yesOrders, noOrders, proboFee, logMatchedOrder]);
+  }, [yesOrders, noOrders, platformFee, logMatchedOrder]);
 
   // Function to place a bulk of bets
   const placeBulkBets = useCallback(
@@ -130,10 +130,10 @@ export default function SimulatorPage() {
 
       if (type === "yes") {
         setYesOrders((prev) => [...prev, ...newOrders]);
-        logNewBet(`Placed ${count} 'YES' bets at ₹${roundedPrice.toFixed(1)}.`);
+        logNewBet(`Placed ${count} 'YES' bets at £${roundedPrice.toFixed(1)}.`);
       } else {
         setNoOrders((prev) => [...prev, ...newOrders]);
-        logNewBet(`Placed ${count} 'NO' bets at ₹${roundedPrice.toFixed(1)}.`);
+        logNewBet(`Placed ${count} 'NO' bets at £${roundedPrice.toFixed(1)}.`);
       }
     },
     [getUniqueId, logNewBet]
@@ -193,7 +193,7 @@ export default function SimulatorPage() {
   };
 
   const handleUpdateFee = () => {
-    logNewBet(`Probo Fee updated to ${proboFee}%.`);
+    logNewBet(`Platform Fee updated to ${platformFee}%.`);
   };
 
   // Sync sliders and recommended prices on market price change
@@ -228,8 +228,8 @@ export default function SimulatorPage() {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <p className="text-2xl font-bold">₹{totalPool.toFixed(2)}</p>
+                <PoundSterling className="h-4 w-4 text-muted-foreground" />
+                <p className="text-2xl font-bold">£{totalPool.toFixed(2)}</p>
               </div>
               <p className="text-sm text-muted-foreground">Total Pool</p>
             </CardContent>
@@ -240,7 +240,7 @@ export default function SimulatorPage() {
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Zap className="h-4 w-4 text-yellow-500" />
                 <p className="text-2xl font-bold">
-                  ₹{totalFeesCollected.toFixed(2)}
+                  £{totalFeesCollected.toFixed(2)}
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">Fees Collected</p>
@@ -287,7 +287,7 @@ export default function SimulatorPage() {
                 Place 'Yes' Bets
               </CardTitle>
               <CardDescription>
-                Recommended Price: ₹{currentMarketPrice?.toFixed(1) || "5.0"}
+                Recommended Price: £{currentMarketPrice?.toFixed(1) || "5.0"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -304,7 +304,7 @@ export default function SimulatorPage() {
               </div>
 
               <div className="space-y-4">
-                <Label>Target Price: ₹{yesPriceSlider[0].toFixed(1)}</Label>
+                <Label>Target Price: £{yesPriceSlider[0].toFixed(1)}</Label>
                 <Slider
                   value={yesPriceSlider}
                   onValueChange={setYesPriceSlider}
@@ -314,8 +314,8 @@ export default function SimulatorPage() {
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>₹0.5</span>
-                  <span>₹9.5</span>
+                  <span>£0.5</span>
+                  <span>£9.5</span>
                 </div>
               </div>
 
@@ -337,7 +337,7 @@ export default function SimulatorPage() {
                 Place 'No' Bets
               </CardTitle>
               <CardDescription>
-                Recommended Price: ₹
+                Recommended Price: £
                 {currentMarketPrice
                   ? (10 - currentMarketPrice).toFixed(1)
                   : "5.0"}
@@ -357,7 +357,7 @@ export default function SimulatorPage() {
               </div>
 
               <div className="space-y-4">
-                <Label>Target Price: ₹{noPriceSlider[0].toFixed(1)}</Label>
+                <Label>Target Price: £{noPriceSlider[0].toFixed(1)}</Label>
                 <Slider
                   value={noPriceSlider}
                   onValueChange={setNoPriceSlider}
@@ -367,8 +367,8 @@ export default function SimulatorPage() {
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>₹0.5</span>
-                  <span>₹9.5</span>
+                  <span>£0.5</span>
+                  <span>£9.5</span>
                 </div>
               </div>
 
@@ -398,8 +398,8 @@ export default function SimulatorPage() {
                 <Input
                   id="fee"
                   type="number"
-                  value={proboFee}
-                  onChange={(e) => setProboFee(parseFloat(e.target.value) || 0)}
+                  value={platformFee}
+                  onChange={(e) => setPlatformFee(parseFloat(e.target.value) || 0)}
                   min="0"
                   max="100"
                   step="0.1"
@@ -444,7 +444,7 @@ export default function SimulatorPage() {
 
                       {/* Price */}
                       <div className="text-center font-mono text-sm">
-                        ₹{item.price.toFixed(1)}
+                        £{item.price.toFixed(1)}
                       </div>
 
                       {/* No Orders */}

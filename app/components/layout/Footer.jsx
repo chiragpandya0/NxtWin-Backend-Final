@@ -11,27 +11,14 @@ const Footer = () => {
           {/* Brand / official info */}
           <div className="md:col-span-4">
             <a href="/" className="inline-flex items-center gap-3">
-              <span className="text-2xl font-extrabold text-white">Probo</span>
+              <span className="text-2xl font-extrabold text-white">NxtWin</span>
             </a>
 
             <p className="mt-4 text-sm text-gray-400 leading-relaxed max-w-md">
-              Probo is an AI-driven predictive platform offering real-time
-              insights and instant settlements. Trade & bet responsibly — terms
-              apply.
+              NxtWin is a simulated prediction market. All balances and trades
+              use virtual funds with no monetary value.
             </p>
 
-            <div className="mt-4 text-xs text-gray-400 space-y-1">
-              {/* Replace these with your real company details */}
-              <div>
-                <span className="font-medium text-gray-300">
-                  Probo Labs Pvt. Ltd.
-                </span>
-              </div>
-              <div>
-                Reg. No: <span className="text-gray-300">12345678</span>
-              </div>
-              <div>Registered Office: 12 Example Street, Mumbai, India</div>
-            </div>
           </div>
 
           {/* Nav columns (center) */}
@@ -130,9 +117,6 @@ const Footer = () => {
           {/* Right: contact + socials */}
           <div className="md:col-span-3">
             <h4 className="text-sm font-semibold text-white">Contact</h4>
-            <p className="text-sm text-gray-400 mt-2">support@probo.com</p>
-            <p className="text-sm text-gray-400">+91 • 90000 00000</p>
-
             <div className="mt-4 flex gap-3">
               <a
                 href="https://twitter.com"
@@ -168,7 +152,7 @@ const Footer = () => {
                 <strong>Legal</strong>
               </div>
               <div className="mt-2">
-                Licensed for entertainment betting. Local laws apply.
+                Simulation for educational purposes. No real money is wagered.
               </div>
             </div>
           </div>
@@ -177,14 +161,9 @@ const Footer = () => {
         {/* Bottom: legal row */}
         <div className="mt-8 border-t border-white/6 pt-6 text-xs text-gray-400 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="max-w-lg">
-            <p>© {year} Probo Labs Pvt. Ltd. All rights reserved.</p>
+            <p>© {year} NxtWin. All rights reserved.</p>
             <p className="mt-1 text-gray-400">
-              Betting involves risk. If you or someone you know has a gambling
-              problem, please seek help.{" "}
-              <a className="underline hover:no-underline" href="/responsible">
-                Responsible Gambling
-              </a>
-              .
+              Virtual funds only. Past simulated results do not indicate real-world outcomes.
             </p>
           </div>
 
@@ -194,12 +173,6 @@ const Footer = () => {
             </a>
             <a href="/terms" className="hover:text-white transition">
               Terms &amp; Conditions
-            </a>
-            <a href="/aml" className="hover:text-white transition">
-              AML Policy
-            </a>
-            <a href="/status" className="hover:text-white transition">
-              Status
             </a>
           </div>
         </div>

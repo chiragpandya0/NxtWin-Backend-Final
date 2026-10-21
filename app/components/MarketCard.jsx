@@ -37,7 +37,7 @@ export const MarketCard = ({ title, category, deadline, yesShare, participants, 
 
         onBid(amt, selected);
         setAmount("");
-        toast({ title: "Bid placed", description: `You bid ₹${amt} on ${selected}. Potential payout ₹${payout}.` });
+        toast({ title: "Bid placed", description: `You bid £${amt} on ${selected}. Potential payout £${payout}.` });
     };
 
     return (
@@ -59,7 +59,7 @@ export const MarketCard = ({ title, category, deadline, yesShare, participants, 
                                 </div>
                                 <div className="flex items-center gap-1">
                                     <span className="text-xs">•</span>
-                                    <span>Volume ₹{volume.toLocaleString()}</span>
+                                    <span>Volume £{volume.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -82,7 +82,7 @@ export const MarketCard = ({ title, category, deadline, yesShare, participants, 
                                     <span className="text-xs bg-white/60 rounded px-2 py-0.5">{opt.share}% market</span>
                                 </div>
                                 <div className="flex items-end justify-between">
-                                    <div className="text-lg font-bold">{opt.key === "YES" ? "👍" : "👎"}</div>
+                                    <div className="text-lg font-bold">{opt.key}</div>
                                     <div className="text-xs text-slate-500">{Math.round((opt.share * participants) / 100)} bids</div>
                                 </div>
                             </button>
@@ -100,13 +100,13 @@ export const MarketCard = ({ title, category, deadline, yesShare, participants, 
                                         className={`rounded-full px-4 py-2 font-semibold ${amount === String(v) ? "shadow-md" : ""}`}
                                         onClick={() => setAmount(String(v))}
                                     >
-                                        ₹{v}
+                                        £{v}
                                     </Button>
                                 ))}
                             </div>
                             <Input
                                 type="number"
-                                placeholder="Enter amount (₹)"
+                                placeholder="Enter amount (£)"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 className="rounded-lg border-2 border-slate-200 focus:border-blue-400 focus:ring-blue-400"
@@ -115,7 +115,7 @@ export const MarketCard = ({ title, category, deadline, yesShare, participants, 
                                 <span>Selected:</span>
                                 <span className="font-semibold text-slate-700">{selected ?? "—"}</span>
                                 <span>• Possible payout:</span>
-                                <span className="font-semibold text-green-700">₹{payout}</span>
+                                <span className="font-semibold text-green-700">£{payout}</span>
                             </div>
                         </div>
                         <Button

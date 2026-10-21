@@ -13,7 +13,7 @@ import {
   MessageCircle,
   BarChart3,
   Clock,
-  DollarSign,
+  PoundSterling,
   Plus,
   Minus,
   RotateCcw,
@@ -81,6 +81,7 @@ import {
 
 // Import the new component
 import { ProfitLossAlert } from "../../components/ProfitLossAlert";
+import { BASE_URL } from "../../utils/api";
 
 // Add this helper function near the top with other utility functions
 const calculateDynamicPricing = (orderDepth) => {
@@ -208,7 +209,7 @@ function OrderBook({ orderDepth, currentYesPrice }) {
 
                     <div className="relative z-10 flex justify-between w-full">
                       <span className="text-sm font-medium text-green-600">
-                        ₹{order.price.toFixed(2)}
+                        £{order.price.toFixed(2)}
                       </span>
                       <span className="text-sm font-mono">
                         {formatQuantity(order.quantity)}
@@ -252,7 +253,7 @@ function OrderBook({ orderDepth, currentYesPrice }) {
 
                     <div className="relative z-10 flex justify-between w-full">
                       <span className="text-sm font-medium text-red-600">
-                        ₹{order.price.toFixed(2)}
+                        £{order.price.toFixed(2)}
                       </span>
                       <span className="text-sm font-mono">
                         {formatQuantity(order.quantity)}
@@ -334,12 +335,12 @@ function UserOrderHistory({ userOrders }) {
                       {getStatusBadge(order.status)}
                     </div>
                     <span className="text-sm font-medium">
-                      ₹{(order.price * order.quantity).toFixed(2)}
+                      £{(order.price * order.quantity).toFixed(2)}
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground space-y-1">
                     <div>
-                      Price: ₹{order.price.toFixed(2)} × {order.quantity}
+                      Price: £{order.price.toFixed(2)} × {order.quantity}
                     </div>
                     <div>{new Date(order.timestamp).toLocaleString()}</div>
                   </div>
@@ -377,10 +378,10 @@ function UserOrderHistory({ userOrders }) {
                           {order.option.toUpperCase()}
                         </Badge>
                       </TableCell>
-                      <TableCell>₹{order.price.toFixed(2)}</TableCell>
+                      <TableCell>£{order.price.toFixed(2)}</TableCell>
                       <TableCell>{order.quantity}</TableCell>
                       <TableCell>
-                        ₹{(order.price * order.quantity).toFixed(2)}
+                        £{(order.price * order.quantity).toFixed(2)}
                       </TableCell>
                       <TableCell>{getStatusBadge(order.status)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
@@ -428,7 +429,7 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
 
     try {
       const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/resolve-event",
+        `${BASE_URL}/api/resolve-event`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -475,7 +476,7 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
           }
         } else {
           // Show general resolution toast for other users
-          toast.success(`🎉 Event Resolved: ${data.resolution} Won!`, {
+          toast.success(`Event resolved: ${data.resolution} won`, {
             description: "Check your balance for any winnings",
             duration: 10000,
           });
@@ -503,7 +504,7 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
 
     try {
       const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/admin/update-weather",
+        `${BASE_URL}/api/admin/update-weather`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -516,7 +517,7 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success("🌤️ Market Data Updated!", {
+        toast.success("Market data updated", {
           description: "Weather data has been refreshed and sent to all users",
           duration: 5000,
         });
@@ -749,7 +750,7 @@ function OrderPanel({
       console.log("Placing order with data:", orderData);
 
       const orderResponse = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/order",
+        `${BASE_URL}/api/order`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -779,7 +780,7 @@ function OrderPanel({
         toast.success("Your Order was Placed Successfully!", {
           description: `${validQuantity} ${optionText} share${
             validQuantity > 1 ? "s" : ""
-          } @ ₹${validPrice.toFixed(2)} each • Total: ₹${cost.toFixed(2)}`,
+          } @ £${validPrice.toFixed(2)} each • Total: £${cost.toFixed(2)}`,
           duration: 6000,
         });
 
@@ -792,7 +793,7 @@ function OrderPanel({
       } else {
         const errorMsg = orderResult.error || "Failed to place order";
         console.error("Order failed:", orderResult);
-        toast.error(`❌ Order Failed: ${errorMsg}`, {
+        toast.error(`Order failed: ${errorMsg}`, {
           description: orderResult.details || "Please try again",
           duration: 4000,
         });
@@ -801,13 +802,13 @@ function OrderPanel({
       console.error("Error placing order:", error);
 
       if (error.name === "TypeError" && error.message.includes("fetch")) {
-        toast.error("🔌 Connection Error", {
+        toast.error("Connection error", {
           description:
             "Cannot connect to server. Please check if the backend is running.",
           duration: 5000,
         });
       } else {
-        toast.error("⚠️ Network Error", {
+        toast.error("Network error", {
           description: error.message || "Please try again in a moment.",
           duration: 4000,
         });
@@ -882,7 +883,7 @@ function OrderPanel({
           >
             <div className="flex flex-col items-center">
               <span className="font-bold">YES</span>
-              <span className="text-xs">₹{formatPrice(yesPrice)}</span>
+              <span className="text-xs">£{formatPrice(yesPrice)}</span>
             </div>
           </Button>
 
@@ -898,7 +899,7 @@ function OrderPanel({
           >
             <div className="flex flex-col items-center">
               <span className="font-bold">NO</span>
-              <span className="text-xs">₹{formatPrice(noPrice)}</span>
+              <span className="text-xs">£{formatPrice(noPrice)}</span>
             </div>
           </Button>
         </div>
@@ -929,7 +930,7 @@ function OrderPanel({
                 </Button>
 
                 <div className="px-4 py-2 bg-muted rounded-md min-w-[80px] text-center font-mono">
-                  ₹{formatPrice(currentPrice)}
+                  £{formatPrice(currentPrice)}
                 </div>
 
                 <Button
@@ -1040,19 +1041,19 @@ function OrderPanel({
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span>You pay:</span>
-              <span className="font-bold">₹{cost.toFixed(2)}</span>
+              <span className="font-bold">£{cost.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between text-sm">
               <span>You Get (after 10% fee):</span>
               <span className="font-bold text-green-400">
-                ₹{(cost + (potentialReturn - cost) * 0.9).toFixed(2)}
+                £{(cost + (potentialReturn - cost) * 0.9).toFixed(2)}
               </span>
             </div>
 
             {customPrice !== null && (
               <p className="text-xs text-muted-foreground">
-                Using custom price (Market: ₹
+                Using custom price (Market: £
                 {formatPrice(selectedOption === "YES" ? yesPrice : noPrice)})
               </p>
             )}
@@ -1088,11 +1089,11 @@ function OrderPanel({
           ) : cost > balance ? (
             "Insufficient Balance"
           ) : immediatelyFillableQuantity === quantity ? (
-            `Buy @ ₹${cost.toFixed(2)}`
+            `Buy @ £${cost.toFixed(2)}`
           ) : immediatelyFillableQuantity > 0 ? (
-            `Place Order @ ₹${cost.toFixed(2)}`
+            `Place Order @ £${cost.toFixed(2)}`
           ) : (
-            `Place Order @ ₹${cost.toFixed(2)}`
+            `Place Order @ £${cost.toFixed(2)}`
           )}
         </Button>
       </CardContent>
@@ -1259,7 +1260,7 @@ function WeatherWidget({ socket }) {
       setError(null);
 
       const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/get/weather"
+        `${BASE_URL}/api/get/weather`
       );
 
       if (!response.ok) {
@@ -1336,7 +1337,7 @@ function WeatherWidget({ socket }) {
         setError(null);
 
         // Show notification to user
-        toast.success("🌤️ Weather data updated!", {
+        toast.success("Weather data updated", {
           description: "New market data has been refreshed by admin",
           duration: 4000,
         });
@@ -1541,7 +1542,7 @@ export default function BidPage() {
 
     try {
       const userResponse = await fetch(
-        `https://nxtwin-backend-final.onrender.com/api/get/user/${clerkId}`
+        `${BASE_URL}/api/get/user/${clerkId}`
       );
       if (userResponse.ok) {
         const userData = await userResponse.json();
@@ -1580,7 +1581,7 @@ export default function BidPage() {
   // Socket.IO Connection Management
   useEffect(() => {
     // Initialize socket connection
-    socket.current = io("https://nxtwin-backend-final.onrender.com", {
+    socket.current = io(BASE_URL, {
       transports: ["websocket", "polling"],
     });
 
@@ -1614,7 +1615,7 @@ export default function BidPage() {
     socket.current.on("reconnect", () => {
       console.log("Socket reconnected");
       setIsSocketConnected(true);
-      toast.success("🔄 Reconnected to live updates", {
+      toast.success("Reconnected to live updates", {
         duration: 3000,
       });
     });
@@ -1662,7 +1663,7 @@ export default function BidPage() {
 
       // Only show notification if it's not the current user's order
       if (!isCurrentUser) {
-        toast.info("📈 New order placed!", {
+        toast.info("New order placed", {
           description: `${displayName} placed a ${data.optionKey} order`,
           duration: 3000,
         });
@@ -1742,13 +1743,13 @@ export default function BidPage() {
 
         // Show appropriate toast based on status
         if (data.status === "filled") {
-          toast.success("🎯 Your order was completely filled!", {
-            description: `${data.quantity} ${data.optionKey} shares @ ₹${data.price}`,
+          toast.success("Your order was completely filled", {
+            description: `${data.quantity} ${data.optionKey} shares @ £${data.price}`,
             duration: 5000,
           });
         } else if (data.status === "partly_filled") {
-          toast.success("🎯 Your order was partially filled!", {
-            description: `${data.quantity} of ${data.totalQuantity} ${data.optionKey} shares @ ₹${data.price}`,
+          toast.success("Your order was partially filled", {
+            description: `${data.quantity} of ${data.totalQuantity} ${data.optionKey} shares @ £${data.price}`,
             duration: 5000,
           });
         }
@@ -1772,12 +1773,12 @@ export default function BidPage() {
 
         // Show appropriate toast based on status
         if (data.status === "filled") {
-          toast.success("🎯 Your order was filled!", {
+          toast.success("Your order was filled", {
             description: `Order status updated to ${data.status}`,
             duration: 5000,
           });
         } else if (data.status === "cancelled") {
-          toast.warning("❌ Order cancelled", {
+          toast.warning("Order cancelled", {
             description: `Your order has been cancelled`,
             duration: 4000,
           });
@@ -1804,8 +1805,8 @@ export default function BidPage() {
       if (data.clerkId === clerkUser?.id) {
         setBalance(data.newBalance);
 
-        toast.success("💰 Balance updated", {
-          description: `Your new balance: ₹${data.newBalance.toFixed(2)}`,
+        toast.success("Balance updated", {
+          description: `Your new balance: £${data.newBalance.toFixed(2)}`,
           duration: 4000,
         });
       }
@@ -1822,7 +1823,7 @@ export default function BidPage() {
     socket.current.on("priceUpdate", (data) => {
       console.log("Received price update:", data);
 
-      toast.info("📊 Price updated", {
+      toast.info("Price updated", {
         description: "Market prices have been updated",
         duration: 3000,
       });
@@ -1831,7 +1832,7 @@ export default function BidPage() {
     socket.current.on("bidMatch", (data) => {
       console.log("Received bid match:", data);
 
-      toast.success("🎯 Bid matched!", {
+      toast.success("Bid matched", {
         description: "A bid has been successfully matched",
         duration: 5000,
       });
@@ -1873,7 +1874,7 @@ export default function BidPage() {
           }
         } else {
           // Show general resolution toast for other users
-          toast.success(`🎉 Event Resolved: ${data.resolution} Won!`, {
+          toast.success(`Event resolved: ${data.resolution} won`, {
             description: "Check your balance for any winnings",
             duration: 10000,
           });
@@ -1888,8 +1889,8 @@ export default function BidPage() {
 
       // Show house betting notification
       if (data.executionType === "house") {
-        toast.success("🏠 Order executed by house!", {
-          description: `Platform profit: ₹${data.platformProfit.toFixed(2)}`,
+        toast.success("Order executed by house", {
+          description: `Platform profit: £${data.platformProfit.toFixed(2)}`,
           duration: 5000,
         });
       }
@@ -1918,7 +1919,7 @@ export default function BidPage() {
 
       try {
         const response = await fetch(
-          `https://nxtwin-backend-final.onrender.com/api/get/user/${clerkUser.id}`
+          `${BASE_URL}/api/get/user/${clerkUser.id}`
         );
         const data = await response.json();
 
@@ -1928,7 +1929,7 @@ export default function BidPage() {
           // Fetch user's orders for this bid with better error handling
           try {
             const ordersResponse = await fetch(
-              `https://nxtwin-backend-final.onrender.com/api/get/user-orders/${clerkUser.id}/${id}`
+              `${BASE_URL}/api/get/user-orders/${clerkUser.id}/${id}`
             );
             if (ordersResponse.ok) {
               const ordersData = await ordersResponse.json();
@@ -1956,7 +1957,7 @@ export default function BidPage() {
         } else {
           // Create user if doesn't exist
           const createResponse = await fetch(
-            "https://nxtwin-backend-final.onrender.com/api/create-user",
+            `${BASE_URL}/api/create-user`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1990,7 +1991,7 @@ export default function BidPage() {
       setLoadingMarket(true);
       try {
         const response = await fetch(
-          `https://nxtwin-backend-final.onrender.com/api/get/bid/${id}`
+          `${BASE_URL}/api/get/bid/${id}`
         );
         const data = await response.json();
 
@@ -2001,7 +2002,7 @@ export default function BidPage() {
 
           try {
             const pricingResponse = await fetch(
-              `https://nxtwin-backend-final.onrender.com/api/get/dynamic-pricing/${id}`
+              `${BASE_URL}/api/get/dynamic-pricing/${id}`
             );
             if (pricingResponse.ok) {
               const pricingData = await pricingResponse.json();
@@ -2036,7 +2037,7 @@ export default function BidPage() {
                 ? `Ends ${new Date(data.bid.endTime).toLocaleDateString()}`
                 : "Today",
             context: `Make correct prediction and win big!`,
-            marketNews: `Current Yes price: ₹${dynamicYesPrice}, Volume: ₹${data.bid.volume}`,
+            marketNews: `Current Yes price: £${dynamicYesPrice}, Volume: £${data.bid.volume}`,
             optionA: "Yes",
             optionB: "No",
           };
@@ -2045,7 +2046,7 @@ export default function BidPage() {
           // Fetch real order depth for this market
           try {
             const depthResponse = await fetch(
-              `https://nxtwin-backend-final.onrender.com/api/get/order-depth/${id}`
+              `${BASE_URL}/api/get/order-depth/${id}`
             );
             if (depthResponse.ok) {
               const depthData = await depthResponse.json();
@@ -2149,7 +2150,7 @@ export default function BidPage() {
 
     try {
       const response = await fetch(
-        "https://nxtwin-backend-final.onrender.com/api/claim-reward",
+        `${BASE_URL}/api/claim-reward`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2161,8 +2162,8 @@ export default function BidPage() {
 
       if (response.ok) {
         setBalance(data.newBalance);
-        toast.success("🎉 Reward Claimed!", {
-          description: `You've received ₹500! Your new balance is ₹${data.newBalance}`,
+        toast.success("Reward claimed", {
+          description: `You've received £500! Your new balance is £${data.newBalance}`,
           duration: 5000,
         });
       } else {
@@ -2256,13 +2257,13 @@ export default function BidPage() {
                       )}
 
                       <div className="text-2xl font-bold">
-                        ₹{balance.toFixed(2)}
+                        £{balance.toFixed(2)}
                       </div>
 
                       <div className="text-sm text-muted-foreground">
                         {clerkUser?.id
                           ? "is your remaining balance"
-                          : "is your demo balance"}
+                          : "is your simulated balance"}
                       </div>
 
                       {/* Claim Reward Button - only show if balance is 0 and user is signed in */}
@@ -2278,7 +2279,7 @@ export default function BidPage() {
                               Claiming...
                             </>
                           ) : (
-                            <>🎁 Claim Your Reward!</>
+                            <>Claim Reward</>
                           )}
                         </Button>
                       )}
@@ -2450,19 +2451,19 @@ export default function BidPage() {
                 <div className="flex justify-between items-center text-sm">
                   <span>Yes Price</span>
                   <Badge className="bg-green-100 text-green-800">
-                    ₹{market?.yesPrice ?? "—"}
+                    £{market?.yesPrice ?? "—"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span>No Price</span>
                   <Badge className="bg-red-100 text-red-800">
-                    ₹{market ? (10 - market.yesPrice).toFixed(2) : "—"}
+                    £{market ? (10 - market.yesPrice).toFixed(2) : "—"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span>Volume</span>
                   <span className="font-semibold">
-                    ₹{(market?.volume ?? 0).toLocaleString()}
+                    £{(market?.volume ?? 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
@@ -2488,13 +2489,13 @@ export default function BidPage() {
                 <div className="flex justify-between items-center text-sm">
                   <span>Money Collected</span>
                   <Badge className="bg-blue-100 text-blue-800">
-                    ₹{platformMetrics.totalMoneyCollected?.toFixed(2) || "0"}
+                    £{platformMetrics.totalMoneyCollected?.toFixed(2) || "0"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span>Max Liability</span>
                   <Badge className="bg-orange-100 text-orange-800">
-                    ₹{platformMetrics.maxLiability?.toFixed(2) || "0"}
+                    £{platformMetrics.maxLiability?.toFixed(2) || "0"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center text-sm">
@@ -2506,7 +2507,7 @@ export default function BidPage() {
                         : "bg-red-100 text-red-800"
                     }
                   >
-                    ₹{platformMetrics.platformProfit?.toFixed(2) || "0"}
+                    £{platformMetrics.platformProfit?.toFixed(2) || "0"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center text-sm">
@@ -2552,7 +2553,7 @@ export default function BidPage() {
                 <div className="flex justify-between items-center text-sm">
                   <span>Current volume</span>
                   <Badge className="bg-emerald-100 text-emerald-800">
-                    ₹{market?.volume ?? 0}
+                    £{market?.volume ?? 0}
                   </Badge>
                 </div>
               </CardContent>
@@ -2599,7 +2600,7 @@ export default function BidPage() {
                             {order.option.toUpperCase()}
                           </Badge>
                           <span className="text-sm font-medium">
-                            ₹{order.price * order.quantity}
+                            £{order.price * order.quantity}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground truncate">

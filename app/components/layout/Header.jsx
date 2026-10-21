@@ -21,7 +21,7 @@ import {
   SignUpButton,
 } from "@clerk/clerk-react";
 
-const ProboHeader = () => {
+const Header = () => {
   const { isSignedIn, isLoaded, user } = useUser();
   const pathname = usePathname() || "/";
 
@@ -342,4 +342,4 @@ const ProboHeader = () => {
   );
 };
 
-export default ProboHeader;
+export default Header;

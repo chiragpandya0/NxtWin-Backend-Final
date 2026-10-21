@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Aurora from "./Aurora";
 import RippleGrid from "./RippleGrid";
 import Link from "next/link";
@@ -8,92 +8,50 @@ import CardSwap, { Card } from "./CardSwap";
 import InfiniteScroll from "./InfiniteScroll";
 import SpotlightCard from "./SpotlightCard";
 import Image from "next/image";
+import { BASE_URL } from "../utils/api";
 
 const Home = () => {
   const items = [
-    { content: <p>📊 AI predicts a 78% chance of Team A winning tonight!</p> },
-    { content: <p>💰 Big Win! User123 just earned ₹50,000 on Probo.</p> },
-    {
-      content: (
-        <p>📈 Cricket market trending upwards, join before the close!</p>
-      ),
-    },
-    {
-      content: (
-        <p>🎯 "AI nailed my predictions last week" – Real User Review</p>
-      ),
-    },
-    {
-      content: (
-        <p>📰 Breaking: Bitcoin crosses $80,000 – open a position now!</p>
-      ),
-    },
-    { content: <p>⚡ Lightning-fast betting with zero downtime</p> },
-    {
-      content: (
-        <p>💡 Tip: Diversify your portfolio with AI-driven suggestions</p>
-      ),
-    },
-    { content: <p>📊 Market depth charts now live for all categories</p> },
-    { content: <p>🎮 Esports predictions with real-time odds</p> },
-    { content: <p>🚀 New "Quick Bet" feature just launched</p> },
+    { content: <p>Order book with live bids and asks on every market</p> },
+    { content: <p>Prices move with demand through dynamic pricing</p> },
+    { content: <p>Positions settle automatically when a market resolves</p> },
+    { content: <p>AI-assisted probability estimates for each question</p> },
+    { content: <p>Live balance and order status updates</p> },
+    { content: <p>Simulated funds only: no real money is involved</p> },
   ];
 
-  const marketCards = [
-    {
-      id: 1,
-      title: "Will Trump meet Putin in 2025?",
-      category: "Politics",
-      optionA: "Yes",
-      optionB: "No",
-      yesShare: 62,
-      volume: 110000,
-      participants: 129,
-      deadline: "Closes in 9h 24m",
-      image: "/trump.jpg",
-    },
-    {
-      id: 2,
-      title: "Claude 5 release before 2025 end?",
-      category: "Tech",
-      optionA: "Yes",
-      optionB: "No",
-      yesShare: 48,
-      volume: 47800,
-      participants: 812,
-      deadline: "Closes in 1d 2h",
-      image: "/claude.webp",
-    },
-    {
-      id: 3,
-      title: "Jeff Bezos to become richest man again?",
-      category: "Finance",
-      optionA: "Yes",
-      optionB: "No",
-      yesShare: 39,
-      volume: 85000,
-      participants: 351,
-      deadline: "Closes in 5d",
-      image: "/jeff.jpg",
-    },
-    {
-      id: 4,
-      title: "Ethereum above $3600 on August 13?",
-      category: "Crypto",
-      optionA: ">$3600",
-      optionB: "<$3600",
-      yesShare: 22,
-      volume: 156000,
-      participants: 1240,
-      deadline: "Closes in 12h",
-      image: "/eth.jpg",
-    },
-  ];
+
+  const [marketCards, setMarketCards] = useState([]);
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/get/bids`)
+      .then((res) => res.json())
+      .then((data) =>
+        setMarketCards(
+          (data.bids || [])
+            .filter((bid) => (bid.status || "active") === "active")
+            .slice(0, 4)
+            .map((bid) => ({
+              id: bid._id,
+              title: bid.question,
+              category: bid.category,
+              optionA: "Yes",
+              optionB: "No",
+              yesShare: Math.round(bid.yesPrice * 10),
+              volume: bid.volume,
+              deadline: `Closes ${new Date(bid.endTime).toLocaleString()}`,
+              image: bid.image,
+            }))
+        )
+      )
+      .catch(() => setMarketCards([]));
+  }, []);
+
 
   // Helper functions from bid/page.jsx
-  const formatINRCompact = (amount) => {
-    if (amount >= 10000000) return `${(amount / 10000000).toFixed(1)}Cr`;
-    if (amount >= 100000) return `${(amount / 100000).toFixed(1)}L`;
+  const formatCurrencyCompact = (amount) => {
+    if (amount >= 1000000000) return `${(amount / 1000000000).toFixed(1)}B`;
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
     if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`;
     return amount.toString();
   };
@@ -119,7 +77,7 @@ const Home = () => {
 
   // Card component from bid/page.jsx
   const MarketCard = ({ market }) => {
-    const volCompact = formatINRCompact(market.volume);
+    const volCompact = formatCurrencyCompact(market.volume);
     const { yes, no } = getPrices(market.yesShare);
 
     return (
@@ -148,7 +106,7 @@ const Home = () => {
                 {market.category}
               </div>
               <div className="absolute bottom-2 right-2 text-[11px] px-2 py-1 rounded-md border border-white/10 bg-black/40 backdrop-blur">
-                Vol: ₹{volCompact}
+                Vol: £{volCompact}
               </div>
 
               <div className="absolute inset-x-0 bottom-0 p-3">
@@ -188,7 +146,7 @@ const Home = () => {
                   {market.optionA}
                 </span>
                 <span className="text-emerald-200 tabular-nums">
-                  ₹{(yes * 100).toFixed(0)}
+                  £{(yes * 10).toFixed(1)}
                 </span>
               </div>
               <div className="flex-1 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 flex items-center justify-between">
@@ -196,15 +154,13 @@ const Home = () => {
                   {market.optionB}
                 </span>
                 <span className="text-red-300 tabular-nums">
-                  ₹{(no * 100).toFixed(0)}
+                  £{(no * 10).toFixed(1)}
                 </span>
               </div>
             </div>
 
             <div className="grid grid-cols-12 items-center">
               <div className="col-span-7 flex items-center gap-3 text-xs text-slate-400">
-                <span>{market.participants.toLocaleString()} joined</span>
-                <span>•</span>
                 <span>{market.deadline}</span>
               </div>
 
@@ -257,10 +213,10 @@ const Home = () => {
             {/* Left: Text and CTA */}
             <section className="flex-1 flex flex-col items-center justify-center px-6 md:items-end md:text-right">
               <h1 className="text-3xl md:text-5xl font-bold mb-4">
-                Probo – Bet Smarter with AI
+                NxtWin Prediction Market Simulator
               </h1>
               <p className="text-lg mb-6 text-gray-200">
-                Real-time predictions. Intelligent insights. Bigger wins.
+                Trade on the outcome of real-world events with simulated funds. Live order books, dynamic pricing and AI-assisted estimates.
               </p>
               <Link href="/sign-in">
                 <button className="px-6 py-3 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition">
@@ -288,7 +244,7 @@ const Home = () => {
                   <Card>
                     <div className="p-6 bg-card rounded-lg border">
                       <h3 className="text-lg font-semibold mb-2">
-                        Advanced AI Prediction
+                        AI Prediction
                       </h3>
                       <img src={"/AI.png"} className="mt-4 rounded-lg" />
                     </div>
@@ -296,7 +252,7 @@ const Home = () => {
                   <Card>
                     <div className="p-6 bg-card rounded-lg border">
                       <h3 className="text-lg font-semibold mb-2">
-                        One Stop Portfolio
+                        Portfolio
                       </h3>
                       <img src={"/dashboard.png"} className="mt-4 rounded-lg" />
                     </div>
@@ -327,10 +283,10 @@ const Home = () => {
 
         <div className="relative z-10">
           <h2 className="text-3xl font-bold text-white text-center mb-2">
-            Trending Markets
+            Open Markets
           </h2>
           <p className="text-gray-300 text-center mb-12">
-            Join the conversation and make your predictions
+            Take a position on any open market
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -390,16 +346,14 @@ const Home = () => {
 
         {/* Right: Text section */}
         <div style={{ flex: "1 1 50%", color: "white" }}>
-          <h2 className="text-2xl font-bold mb-4">Stay Ahead of the Market</h2>
+          <h2 className="text-2xl font-bold mb-4">How It Works</h2>
           <p className="mb-4 text-gray-300">
-            Get live updates on sports, crypto, politics, and more — all powered
-            by our cutting-edge AI. Whether you're betting on the next cricket
-            match or predicting the stock market, Probo keeps you informed and
-            ready.
+            Follow price movements, order book depth and market news across
+            categories, with AI-assisted probability estimates for each question.
           </p>
           <p className="mb-4 text-gray-300">
-            Join thousands of users who trust Probo for accurate, real-time
-            predictions and seamless betting experiences.
+            NxtWin runs on simulated funds. It is built for learning how prediction
+            markets price information, not for wagering real money.
           </p>
           <button className="px-6 py-3 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition">
             Learn More
