@@ -166,7 +166,7 @@ const Home = () => {
 
               <div className="col-span-5 flex items-center justify-end gap-2">
                 <Link
-                  href={`/sign-up`}
+                  href={`/sign-in`}
                   className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-slate-200 text-sm hover:bg-white/[0.08]"
                 >
                   Details
@@ -296,7 +296,7 @@ const Home = () => {
           </div>
 
           <div className="text-center mt-12">
-            <Link href="/sign-up">
+            <Link href="/sign-in">
               <button className="px-8 py-3 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition-colors">
                 View All Markets
               </button>

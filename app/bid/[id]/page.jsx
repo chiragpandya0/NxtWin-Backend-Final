@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, ADMIN_ID } from "../../utils/auth";
 import { toast } from "sonner";
 import io from "socket.io-client";
 import {
@@ -411,7 +411,7 @@ function EventResolutionPanel({ market, clerkUser, setMarket }) {
   const [isUpdatingWeather, setIsUpdatingWeather] = useState(false);
 
   // Check if user is admin (modify this logic as needed)
-  const isAdmin = clerkUser?.id === "user_31EJ9jzTGNPdgsTBT6YFl96E8of";
+  const isAdmin = clerkUser?.id === ADMIN_ID;
 
   // Use market status directly from the database
   const isResolved = market?.status === "resolved";

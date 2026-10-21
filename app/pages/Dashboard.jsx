@@ -1,6 +1,6 @@
-"use client"; // Important for Clerk hooks
+"use client";
 
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "../utils/auth";
 import { useEffect } from "react";
 import Header from "../components/layout/Header";
 import Hero from "../components/sections/Hero";

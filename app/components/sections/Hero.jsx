@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "../../utils/auth";
 import GradientText from "../GradientText";
 import Silk from "../Silk";
 

@@ -2,7 +2,7 @@
 
 import Home from "./components/Home";
 import DashBoard from "./pages/Dashboard";
-import { useUser, UserButton } from "@clerk/nextjs";
+import { useUser } from "./utils/auth";
 
 export default function Page() {
   const { isSignedIn, isLoaded } = useUser();

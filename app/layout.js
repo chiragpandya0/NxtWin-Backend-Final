@@ -1,4 +1,3 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "./components/ui/sonner";
@@ -16,8 +15,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
+    <html lang="en" suppressHydrationWarning>
         <head>
           <meta
             name="google-adsense-account"
@@ -43,6 +41,5 @@ export default function RootLayout({ children }) {
           </ThemeProvider>
         </body>
       </html>
-    </ClerkProvider>
   );
 }

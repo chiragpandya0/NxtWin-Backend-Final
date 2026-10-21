@@ -14,12 +14,7 @@ import {
   Gavel,
   User,
 } from "lucide-react";
-import {
-  UserButton,
-  useUser,
-  SignInButton,
-  SignUpButton,
-} from "@clerk/clerk-react";
+import { useUser, signOut } from "../../utils/auth";
 
 const Header = () => {
   const { isSignedIn, isLoaded, user } = useUser();
@@ -67,7 +62,7 @@ const Header = () => {
     },
   ];
 
-  // Don't render auth-dependent content until client is ready and Clerk is loaded
+  // Don't render auth-dependent content until client is ready and auth state is loaded
   const shouldShowAuthContent = isClient && isLoaded;
 
   return (
@@ -195,22 +190,17 @@ const Header = () => {
                 isSignedIn ? (
                   <div className="flex items-center space-x-3">
                     <div className="hidden md:block mt-1.5 ml-3">
-                      <UserButton
-                        afterSignOutUrl="/"
-                        appearance={{
-                          elements: {
-                            userButtonAvatarBox: "w-9 h-9",
-                            userButtonOuterIdentifier:
-                              "text-sm font-medium text-white",
-                            userButtonPopoverCard:
-                              "bg-black/80 backdrop-blur-2xl border border-white/10 rounded-xl",
-                            userButtonPopoverActionButton:
-                              "hover:bg-white/5 text-white",
-                            userButtonPopoverActionButtonText: "text-sm",
-                            userButtonPopoverFooter: "hidden",
-                          },
-                        }}
-                      />
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm font-medium text-white">
+                          {user?.firstName}
+                        </span>
+                        <button
+                          onClick={signOut}
+                          className="px-3 py-1.5 text-sm rounded-lg bg-white/10 text-white/80 hover:text-white hover:bg-white/15 transition-colors"
+                        >
+                          Sign out
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -218,11 +208,6 @@ const Header = () => {
                     <Link href="/sign-in">
                       <button className="px-4 cursor-pointer py-2.5 text-sm font-medium rounded-xl bg-transparent text-white/80 hover:text-white transition-colors">
                         Sign In
-                      </button>
-                    </Link>
-                    <Link href={"/sign-up"}>
-                      <button className="px-4 cursor-pointer py-2.5 text-sm font-medium rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 transition-all shadow-lg shadow-emerald-500/10">
-                        Sign Up
                       </button>
                     </Link>
                   </div>
@@ -300,29 +285,23 @@ const Header = () => {
               {shouldShowAuthContent ? (
                 isSignedIn ? (
                   <div className="flex justify-center">
-                    <UserButton
-                      afterSignOutUrl="/"
-                      appearance={{
-                        elements: {
-                          userButtonAvatarBox: "w-12 h-12",
-                          userButtonTrigger:
-                            "flex flex-col items-center space-y-2",
-                          userButtonOuterIdentifier:
-                            "text-sm font-medium text-white",
-                        },
-                      }}
-                    />
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-medium text-white">
+                        {user?.firstName}
+                      </span>
+                      <button
+                        onClick={signOut}
+                        className="px-4 py-2 text-sm rounded-lg bg-white/10 text-white hover:bg-white/15 transition-colors"
+                      >
+                        Sign out
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex space-x-3">
                     <a href="/sign-in">
                       <button className="flex-1 px-4 py-3 text-sm font-medium rounded-lg bg-white/10 text-white hover:bg-white/15 transition-colors">
                         Sign In
-                      </button>
-                    </a>
-                    <a href="/sign-up">
-                      <button className="flex-1 px-4 py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 transition-all">
-                        Sign Up
                       </button>
                     </a>
                   </div>
