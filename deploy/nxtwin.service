@@ -1,0 +1,15 @@
+[Unit]
+Description=NxtWin backend
+After=network.target
+
+[Service]
+Type=simple
+User=chirag
+WorkingDirectory=/home/chirag/NxtWin-Backend-Final
+ExecStart=/usr/bin/node index.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
