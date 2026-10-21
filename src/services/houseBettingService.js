@@ -74,10 +74,10 @@ class HouseBettingService {
 
     console.log(`📊 House Betting Analysis for Bid ${bidId}:`);
     console.log(
-      `💰 Total money (including pending): ₹${allOrdersMetrics.totalMoneyCollected}`
+      `💰 Total money (including pending): £${allOrdersMetrics.totalMoneyCollected}`
     );
-    console.log(`⚠️ Max liability: ₹${allOrdersMetrics.maxLiability}`);
-    console.log(`📈 Platform profit: ₹${allOrdersMetrics.platformProfit}`);
+    console.log(`⚠️ Max liability: £${allOrdersMetrics.maxLiability}`);
+    console.log(`📈 Platform profit: £${allOrdersMetrics.platformProfit}`);
     console.log(`✅ Is profitable: ${isProfitable}`);
 
     return {
@@ -142,7 +142,7 @@ class HouseBettingService {
     });
 
     console.log(
-      `🎯 House executed ${executedOrders.length} orders - Platform profit: ₹${finalMetrics.platformProfit}`
+      `🎯 House executed ${executedOrders.length} orders - Platform profit: £${finalMetrics.platformProfit}`
     );
 
     return {

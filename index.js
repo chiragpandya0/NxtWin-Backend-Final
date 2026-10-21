@@ -593,7 +593,7 @@ app.post("/api/claim-reward", async (req, res) => {
         .json({ error: "Reward can only be claimed when balance is 0" });
     }
 
-    user.balance = 1100;
+    user.balance = 100; // £100 starting reward
     await user.save();
 
     // Use SocketService for balance update
@@ -854,7 +854,7 @@ app.post("/api/resolve-event", async (req, res) => {
 
       if (isWinner) {
         // Calculate winnings: cost + (10 - cost) * 0.9
-        const potentialReturn = order.quantity * 10; // Max payout is ₹10 per share
+        const potentialReturn = order.quantity * 10; // Max payout is £10 per share
         const winnings = orderCost + (potentialReturn - orderCost) * 0.9;
 
         userPayouts[order.clerkId].winnings += winnings;
@@ -1081,7 +1081,7 @@ app.post("/api/admin/update-weather", async (req, res) => {
     // Fetch weather data from WeatherStack API
     const fetch = require("node-fetch"); // You might need to install: npm install node-fetch@2
     const response = await fetch(
-      `http://api.weatherstack.com/current?access_key=${API_KEY}&query=New%20Delhi`
+      `http://api.weatherstack.com/current?access_key=${API_KEY}&query=London`
     );
 
     if (!response.ok) {
