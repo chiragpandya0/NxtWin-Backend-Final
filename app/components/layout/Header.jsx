@@ -17,7 +17,7 @@ import {
 import { useUser, signOut } from "../../utils/auth";
 
 const Header = () => {
-  const { isSignedIn, isLoaded, user } = useUser();
+  const { isSignedIn, isLoaded, user, isAdmin } = useUser();
   const pathname = usePathname() || "/";
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -54,6 +54,9 @@ const Header = () => {
       href: "/bid",
       active: pathname.startsWith("/bid"),
     },
+    { name: "Portfolio", icon: BarChart, href: "/portfolio", active: pathname.startsWith("/portfolio") },
+    { name: "Leaderboard", icon: Gavel, href: "/leaderboard", active: pathname.startsWith("/leaderboard") },
+    ...(isAdmin ? [{ name: "Admin", icon: Home, href: "/admin", active: pathname.startsWith("/admin") }] : []),
     {
       name: "Simulator",
       icon: BarChart,
@@ -193,6 +196,9 @@ const Header = () => {
                       <div className="flex items-center space-x-3">
                         <span className="text-sm font-medium text-white">
                           {user?.firstName}
+                          {user?.balancePence != null && (
+                            <span className="ml-2 text-emerald-300">£{(user.balancePence / 100).toFixed(2)}</span>
+                          )}
                         </span>
                         <button
                           onClick={signOut}

@@ -1,67 +1,88 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { api, getToken, setToken } from "./api";
 
-const STORAGE_KEY = "nxtwin_user";
-const EVENT = "nxtwin-auth-change";
+const EVENT = "gaffr-auth-change";
+let cached = null;
 
-export const ADMIN_ID = process.env.NEXT_PUBLIC_ADMIN_ID || "user_admin";
+const emit = () => window.dispatchEvent(new Event(EVENT));
 
-const slugify = (name) =>
-  name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-
-const read = () => {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
-// Shape mirrors the fields the app previously read from Clerk's user object
-const toUser = (stored) =>
-  stored && {
-    id: stored.id,
-    fullName: stored.name,
-    firstName: stored.name,
-    username: stored.name,
-    primaryEmailAddress: { emailAddress: stored.email },
+// Shape kept compatible with the fields the app read before (id, fullName, firstName, ...).
+const toUser = (u) =>
+  u && {
+    id: u.id,
+    fullName: u.name,
+    firstName: u.name?.split(" ")[0] || u.name,
+    username: u.name,
+    email: u.email,
+    role: u.role,
+    isAdmin: u.role === "admin",
+    balancePence: u.balancePence,
   };
 
-export function signIn(name) {
-  const slug = slugify(name);
-  if (!slug) throw new Error("Enter a username");
-  const stored = {
-    id: `user_${slug}`,
-    name: name.trim(),
-    email: `${slug}@nxtwin.local`,
-  };
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-  window.dispatchEvent(new Event(EVENT));
-  return toUser(stored);
+export async function signUp({ email, password, name, dob }) {
+  const { token, user } = await api.signup({ email, password, name, dob });
+  setToken(token);
+  cached = user;
+  emit();
+  return toUser(user);
+}
+
+export async function signIn({ email, password }) {
+  const { token, user } = await api.login({ email, password });
+  setToken(token);
+  cached = user;
+  emit();
+  return toUser(user);
 }
 
 export function signOut() {
-  window.localStorage.removeItem(STORAGE_KEY);
-  window.dispatchEvent(new Event(EVENT));
+  setToken(null);
+  cached = null;
+  emit();
+}
+
+// Re-read the profile (e.g. after a balance change).
+export async function refreshUser() {
+  if (!getToken()) return null;
+  try {
+    const { user } = await api.me();
+    cached = user;
+    emit();
+    return toUser(user);
+  } catch (e) {
+    if (e.status === 401) signOut();
+    return null;
+  }
 }
 
 export function useUser() {
   const [state, setState] = useState({ user: null, isLoaded: false });
 
   useEffect(() => {
-    const sync = () => setState({ user: toUser(read()), isLoaded: true });
-    sync();
+    let alive = true;
+    const sync = () => alive && setState({ user: toUser(cached), isLoaded: true });
+    const load = async () => {
+      if (!getToken()) {
+        cached = null;
+        return sync();
+      }
+      if (!cached) {
+        try {
+          cached = (await api.me()).user;
+        } catch (e) {
+          if (e.status === 401) setToken(null);
+          cached = null;
+        }
+      }
+      sync();
+    };
+    load();
     window.addEventListener(EVENT, sync);
-    window.addEventListener("storage", sync);
     return () => {
+      alive = false;
       window.removeEventListener(EVENT, sync);
-      window.removeEventListener("storage", sync);
     };
   }, []);
 
@@ -69,5 +90,6 @@ export function useUser() {
     user: state.user,
     isLoaded: state.isLoaded,
     isSignedIn: !!state.user,
+    isAdmin: !!state.user?.isAdmin,
   };
 }

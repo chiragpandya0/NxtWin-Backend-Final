@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "./components/ui/sonner";
 import Header from "./components/layout/Header";
+import AccaSlip from "./components/AccaSlip";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
@@ -9,8 +10,8 @@ import Script from "next/script";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "NxtWin",
-  description: "Prediction Market Platform",
+  title: "gaffr.",
+  description: "Free-to-play Premier League prediction market",
 };
 
 export default function RootLayout({ children }) {
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
           >
             <Header />
             {children}
+            <AccaSlip />
             <Toaster />
             <Analytics />
           </ThemeProvider>

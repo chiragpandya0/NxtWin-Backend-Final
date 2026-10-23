@@ -1,5 +1,5 @@
 "use client";
-import { BASE_URL } from "../utils/api";
+import { api, toCard } from "../utils/api";
 import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -23,34 +23,8 @@ export default function Page() {
       try {
         setLoading(true);
 
-        // Fetch bids data from the backend
-        const bidsResponse = await fetch(
-          `${BASE_URL}/api/get/bids`
-        ).then((res) => res.json());
-
-        // Transform backend data to match frontend format
-        const transformedBids = bidsResponse.bids.map((bid) => {
-          // Calculate No price (complement of Yes price)
-          const yesPrice = bid.yesPrice;
-          const noPrice = 10 - yesPrice;
-
-          return {
-            id: bid._id,
-            question: bid.question,
-            category: bid.category,
-            optionA: "Yes", // Default label for option A
-            optionB: "No", // Default label for option B
-            yesPrice: yesPrice,
-            volume: bid.volume,
-            participants: 0, // Placeholder - backend needs to track this
-            deadline: new Date(bid.endTime).toLocaleString(),
-            image: bid.image,
-            // Add status and resolution fields
-            status: bid.status || "active",
-            resolution: bid.resolution || null,
-            resolvedAt: bid.resolvedAt || null,
-          };
-        });
+        const { markets } = await api.markets();
+        const transformedBids = markets.map(toCard);
 
         setData(transformedBids);
       } catch (error) {
@@ -256,17 +230,17 @@ function ProgressPulse({ value = 50 }) {
 function CardGrid({ market, selected, onSelect }) {
   const volCompact = formatCurrencyCompact(market.volume);
   const yesPrice = market.yesPrice;
-  const noPrice = 10 - yesPrice;
+  const noPrice = 1 - yesPrice;
 
-  // Convert price (0.5 to 9.5) to a percentage (5% to 95%)
-  const yesShare = yesPrice * 10;
+  // A price is a probability: 0.46 -> 46%
+  const yesShare = yesPrice * 100;
 
   // Check if prices are defined before displaying
-  const displayYesPrice = yesPrice ? `£${yesPrice.toFixed(2)}` : "N/A";
-  const displayNoPrice = noPrice ? `£${noPrice.toFixed(2)}` : "N/A";
+  const displayYesPrice = yesPrice ? `${Math.round(yesPrice * 100)}p` : "N/A";
+  const displayNoPrice = noPrice ? `${Math.round(noPrice * 100)}p` : "N/A";
 
   // Check if event is resolved
-  const isResolved = market.status === "resolved";
+  const isResolved = market.status === "resolved" || market.status === "void";
 
   return (
     <SpotlightCard

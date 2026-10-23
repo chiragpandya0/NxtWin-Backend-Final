@@ -8,15 +8,15 @@ import CardSwap, { Card } from "./CardSwap";
 import InfiniteScroll from "./InfiniteScroll";
 import SpotlightCard from "./SpotlightCard";
 import Image from "next/image";
-import { BASE_URL } from "../utils/api";
+import { api, toCard } from "../utils/api";
 
 const Home = () => {
   const items = [
-    { content: <p>Order book with live bids and asks on every market</p> },
-    { content: <p>Prices move with demand through dynamic pricing</p> },
+    { content: <p>Player and team stat lines on every Premier League match</p> },
+    { content: <p>Prices move with trading, set by an automated market maker</p> },
     { content: <p>Positions settle automatically when a market resolves</p> },
     { content: <p>AI-assisted probability estimates for each question</p> },
-    { content: <p>Live balance and order status updates</p> },
+    { content: <p>Build accumulators and climb the weekly leaderboard</p> },
     { content: <p>Simulated funds only: no real money is involved</p> },
   ];
 
@@ -24,24 +24,24 @@ const Home = () => {
   const [marketCards, setMarketCards] = useState([]);
 
   useEffect(() => {
-    fetch(`${BASE_URL}/api/get/bids`)
-      .then((res) => res.json())
+    api
+      .markets("?status=open")
       .then((data) =>
         setMarketCards(
-          (data.bids || [])
-            .filter((bid) => (bid.status || "active") === "active")
-            .slice(0, 4)
-            .map((bid) => ({
-              id: bid._id,
-              title: bid.question,
-              category: bid.category,
+          (data.markets || []).slice(0, 4).map((m) => {
+            const c = toCard(m);
+            return {
+              id: c.id,
+              title: c.question,
+              category: c.category,
               optionA: "Yes",
               optionB: "No",
-              yesShare: Math.round(bid.yesPrice * 10),
-              volume: bid.volume,
-              deadline: `Closes ${new Date(bid.endTime).toLocaleString()}`,
-              image: bid.image,
-            }))
+              yesShare: Math.round(c.yesPrice * 100),
+              volume: c.volume,
+              deadline: `Kick-off ${c.deadline}`,
+              image: c.image,
+            };
+          })
         )
       )
       .catch(() => setMarketCards([]));
@@ -146,7 +146,7 @@ const Home = () => {
                   {market.optionA}
                 </span>
                 <span className="text-emerald-200 tabular-nums">
-                  £{(yes * 10).toFixed(1)}
+                  {Math.round(yes * 100)}p
                 </span>
               </div>
               <div className="flex-1 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 flex items-center justify-between">
@@ -154,7 +154,7 @@ const Home = () => {
                   {market.optionB}
                 </span>
                 <span className="text-red-300 tabular-nums">
-                  £{(no * 10).toFixed(1)}
+                  {Math.round(no * 100)}p
                 </span>
               </div>
             </div>
