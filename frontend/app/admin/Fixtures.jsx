@@ -105,6 +105,16 @@ function FixtureCard({ f, teams, players, open, onToggle, reloadFixtures }) {
     return c;
   }, [list]);
 
+  // Where the bets are: total traded and the players with trading, so the right match gets settled
+  const trading = useMemo(() => {
+    const vol = new Map();
+    list.forEach((m) => { if (m.volumePence > 0) vol.set(m.subjectId, (vol.get(m.subjectId) || 0) + m.volumePence); });
+    const names = [...vol.entries()].map(([id, v]) => `${players?.players.find((p) => p._id === id)?.name || "Team"} £${(v / 100).toFixed(2)}`);
+    return { total: [...vol.values()].reduce((a, b) => a + b, 0), names };
+  }, [list, players]);
+  const allSettled = counts.total > 0 && counts.open === 0 && counts.draft === 0 && counts.settled > 0;
+  const partlySettled = counts.settled > 0 && !allSettled;
+
   // Only players who actually have markets in this fixture need results
   const squad = useMemo(() => {
     const per = new Map();
@@ -141,7 +151,13 @@ function FixtureCard({ f, teams, players, open, onToggle, reloadFixtures }) {
         <div>
           <div className="font-medium">{tName(f.homeTeamId)} v {tName(f.awayTeamId)}</div>
           <div className="text-sm text-muted-foreground">
-            GW{f.gameweek} · {new Date(f.kickoff).toLocaleString()} · <Badge variant={f.status === "finished" ? "default" : "outline"}>{f.status}</Badge>
+            GW{f.gameweek} · {new Date(f.kickoff).toLocaleString()} ·{" "}
+            <Badge variant={allSettled ? "default" : "outline"} className={allSettled ? "bg-green-600 text-white" : ""}>
+              {allSettled ? "✔ settled" : partlySettled ? `${f.status} · partly settled` : f.status}
+            </Badge>
+          </div>
+          <div className={`text-xs mt-1 ${trading.total > 0 ? "text-amber-500" : "text-muted-foreground"}`}>
+            {trading.total > 0 ? `Bets placed here: £${(trading.total / 100).toFixed(2)} traded on ${trading.names.join(", ")}` : "No bets placed on this match yet"}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
             {counts.total} markets · {counts.open} open · <b className={counts.settled ? "text-green-500" : ""}>{counts.settled} settled</b>{counts.draft ? ` · ${counts.draft} draft` : ""}
