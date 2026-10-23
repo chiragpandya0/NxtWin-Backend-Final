@@ -100,7 +100,7 @@ install_units() {
 
 install_nginx() {
   log "Installing nginx site for $DOMAIN"
-  [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] || die "No certificate for $DOMAIN. Run: sudo certbot certonly --nginx -d $DOMAIN"
+  sudo test -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" || die "No certificate for $DOMAIN. Run: sudo certbot certonly --nginx -d $DOMAIN"
   local site=/etc/nginx/sites-available/probo
   [ -f "$site.bak" ] || { [ -f "$site" ] && sudo cp "$site" "$site.bak"; } || true
   sed "s|probo.insightfusionanalytics.com|$DOMAIN|g" "$REPO/deploy/nginx-probo.conf" | sudo tee "$site" >/dev/null
