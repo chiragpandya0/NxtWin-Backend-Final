@@ -7,6 +7,8 @@
 #   ./deploy/deploy.sh setup       first-time setup (env, systemd, nginx, stops the old frontend), then deploys
 #   ./deploy/deploy.sh admin       create or reset the admin account (asks for the password)
 #   ./deploy/deploy.sh seed        add a demo gameweek of fixtures and markets
+#   ./deploy/deploy.sh demo        (re)create the video demo: one match, 3 demo users (see docs/DEMO.md)
+#   ./deploy/deploy.sh demo-clean  remove the video demo and its users
 #   ./deploy/deploy.sh status      service state and health checks
 #   ./deploy/deploy.sh logs [backend|frontend]
 #
@@ -181,7 +183,9 @@ case "$cmd" in
             (cd "$REPO/backend" && ADMIN_EMAIL="$AE" ADMIN_PASSWORD="$AP" node scripts/create-admin.js)
             [ -n "$(get_env ADMIN_EMAIL)" ] && set_env ADMIN_EMAIL "$AE" || echo "ADMIN_EMAIL=$AE" >> "$ENVF";;
   seed)     need_node; (cd "$REPO/backend" && node scripts/seed-pl.js);;
+  demo)     need_node; (cd "$REPO/backend" && node scripts/seed-demo.js);;
+  demo-clean) need_node; (cd "$REPO/backend" && node scripts/seed-demo.js --cleanup);;
   status)   status;;
   logs)     case "${2:-backend}" in frontend) sudo journalctl -u nxtwin-web -n 100 -f;; *) sudo journalctl -u nxtwin -n 100 -f;; esac;;
-  *)        sed -n '2,13p' "$0"; exit 1;;
+  *)        sed -n '2,15p' "$0"; exit 1;;
 esac

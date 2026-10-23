@@ -25,7 +25,8 @@ const DEFENSIVE = new Set(["tackles"]);
 const titleFor = (name, stat, line) => `${name} ${STATS[stat]?.label || stat} over ${line}`;
 
 // Create draft markets for a fixture from the pricing model. Safe to re-run (unique index skips duplicates).
-const generateForFixture = async (fixtureId) => {
+// opts.stats limits stat families, opts.playerIds limits players (used by the demo seed).
+const generateForFixture = async (fixtureId, opts = {}) => {
   const settings = await getSettings();
   const fixture = await Fixture.findById(fixtureId);
   if (!fixture) throw Object.assign(new Error("Fixture not found"), { status: 404 });
@@ -34,13 +35,14 @@ const generateForFixture = async (fixtureId) => {
   const created = [];
   const skipped = [];
   for (const [team, opp, factor] of [[home, away, HOME_FACTOR], [away, home, AWAY_FACTOR]]) {
-    const players = await Player.find({ teamId: team._id, active: true });
+    const players = await Player.find({ teamId: team._id, active: true, ...(opts.playerIds && { _id: { $in: opts.playerIds } }) });
     for (const player of players) {
       if (player.minutesSample < settings.minMinutesSample) {
         skipped.push({ player: player.name, reason: "unreliable data" });
         continue;
       }
       for (const [stat, cfg] of Object.entries(STATS)) {
+        if (opts.stats && !opts.stats.includes(stat)) continue;
         const per90 = player.per90.get(stat);
         if (!per90) continue;
         const opponentFactor = DEFENSIVE.has(stat) ? opp.attackFactor : opp.defenceFactor;

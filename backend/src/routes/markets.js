@@ -126,7 +126,8 @@ router.get("/players/:id/markets", async (req, res) => {
 router.get("/leaderboard", async (req, res) => {
   let gw = Number(req.query.gameweek);
   if (!gw) {
-    const last = await Fixture.findOne({ kickoff: { $lte: new Date() } }).sort({ kickoff: -1 }).lean();
+    const settled = await Market.findOne({ status: { $in: ["resolved", "void"] } }).sort({ resolvedAt: -1 }).lean();
+    const last = settled || (await Fixture.findOne({ kickoff: { $lte: new Date() } }).sort({ kickoff: -1 }).lean());
     gw = last ? last.gameweek : 1;
   }
   res.json({ gameweek: gw, leaderboard: await leaderboard(gw) });
