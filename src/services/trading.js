@@ -28,10 +28,18 @@ const priceTrade = (market, settings, { side, action, shares, spendPence }) => {
   n = Math.round(n * 100) / 100;
 
   const priceBefore = lmsr.priceYes(q, b);
-  const gross = action === "buy" ? lmsr.buyCost(q, b, side, n) : lmsr.sellProceeds(q, b, side, n);
-  const grossPence = action === "buy" ? ceilPence(gross * 100) : floorPence(gross * 100);
-  const feePence = Math.ceil(grossPence * settings.feeRate - 1e-9);
-  const netPence = action === "buy" ? grossPence + feePence : Math.max(0, grossPence - feePence);
+  const compute = (shares) => {
+    const gross = action === "buy" ? lmsr.buyCost(q, b, side, shares) : lmsr.sellProceeds(q, b, side, shares);
+    const grossPence = action === "buy" ? ceilPence(gross * 100) : floorPence(gross * 100);
+    const feePence = Math.ceil(grossPence * settings.feeRate - 1e-9);
+    return { grossPence, feePence, netPence: action === "buy" ? grossPence + feePence : Math.max(0, grossPence - feePence) };
+  };
+  let { grossPence, feePence, netPence } = compute(n);
+  // A spend-based buy must never cost more than the amount asked for (penny rounding).
+  while (shares == null && spendPence && netPence > spendPence && n > 0.01) {
+    n = Math.round((n - 0.01) * 100) / 100;
+    ({ grossPence, feePence, netPence } = compute(n));
+  }
   const qAfter = lmsr.add(q, side, action === "buy" ? n : -n);
   return {
     shares: n, grossPence, feePence, netPence, avgPrice: netPence / 100 / n,

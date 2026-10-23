@@ -28,6 +28,16 @@ const H = require("./helpers");
     assert.strictEqual((await reports.reconcile()).ok, true);
   });
 
+  test("spend-based buy never exceeds the spend", async () => {
+    await H.reset();
+    const { markets } = await H.seedWorld();
+    const u = await H.makeUser(email());
+    for (const spend of [100, 333, 1000, 2500]) {
+      const r = await trading.execute(u._id, { marketId: markets[0]._id, side: "yes", action: "buy", spendPence: spend });
+      assert.ok(r.netPence <= spend && r.netPence > spend - 40, `${r.netPence} vs ${spend}`);
+    }
+  });
+
   test("cannot sell shares you do not hold or buy beyond balance", async () => {
     await H.reset();
     const { markets } = await H.seedWorld();
