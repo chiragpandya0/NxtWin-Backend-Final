@@ -1,328 +1,154 @@
 "use client";
-import { api, toCard } from "../utils/api";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { formatCurrencyCompact } from "../utils/formatters";
 import SpotlightCard from "../components/SpotlightCard";
+import PlayerAvatar from "../components/PlayerAvatar";
+import StatLadders, { STAT_ORDER, statLabel } from "../components/StatLadders";
+import { api } from "../utils/api";
+import { formatPence } from "../utils/pricing";
+
+const kickoffLabel = (d) =>
+  new Date(d).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 export default function Page() {
-  const [data, setData] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [q, setQ] = useState("");
-  const [category, setCategory] = useState("All");
-  const [minAmount, setMinAmount] = useState(0);
-  const [maxAmount, setMaxAmount] = useState(2000);
-  const [sortBy, setSortBy] = useState("relevance");
-  const [selected, setSelected] = useState(null);
-  const [viewMode, setViewMode] = useState("grid");
+  const [stat, setStat] = useState("All");
+  const [fixture, setFixture] = useState("all");
+  const [sortBy, setSortBy] = useState("kickoff");
 
-  // Load data from backend
   useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-
-        const { markets } = await api.markets();
-        const transformedBids = markets.map(toCard);
-
-        setData(transformedBids);
-      } catch (error) {
-        console.error("Error loading data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
+    api
+      .groups()
+      .then((d) => setGroups(d.groups))
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
   }, []);
 
-  const categories = useMemo(
-    () => ["All", ...Array.from(new Set(data.map((d) => d.category)))],
-    [data]
-  );
+  const stats = useMemo(() => {
+    const present = new Set(groups.flatMap((g) => g.stats.map((s) => s.stat)));
+    return ["All", ...STAT_ORDER.filter((s) => present.has(s)), ...[...present].filter((s) => !STAT_ORDER.includes(s))];
+  }, [groups]);
+
+  const fixtures = useMemo(() => {
+    const m = new Map();
+    groups.forEach((g) => g.fixture && m.set(g.fixture.id, g.fixture));
+    return [...m.values()].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+  }, [groups]);
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    let r = data.filter((m) => {
-      if (category !== "All" && m.category !== category) return false;
-      if (m.volume < minAmount || m.volume > maxAmount) return false; // Corrected 'amount' to 'volume'
-      if (!ql) return true;
-      return (
-        m.question.toLowerCase().includes(ql) || // Corrected 'title' to 'question'
-        m.optionA.toLowerCase().includes(ql) ||
-        m.optionB.toLowerCase().includes(ql) ||
-        m.category.toLowerCase().includes(ql)
-      );
-    });
-    if (sortBy === "amount-desc") r = r.sort((a, b) => b.volume - a.volume);
-    // Corrected 'amount' to 'volume'
-    else if (sortBy === "amount-asc") r = r.sort((a, b) => a.volume - b.volume);
-    // Corrected 'amount' to 'volume'
-    else if (sortBy === "newest")
-      r = r.sort((a, b) => new Date(b.date) - new Date(a.date)); // 'date' is removed, but keeping the sort to prevent errors. You can replace this with sorting by _id or a new created_at field if needed.
+    let r = groups
+      .filter((g) => fixture === "all" || g.fixture?.id === fixture)
+      .filter((g) => !ql || [g.subject.name, g.subject.team, g.fixture?.home, g.fixture?.away].some((x) => x?.toLowerCase().includes(ql)))
+      .map((g) => (stat === "All" ? g : { ...g, stats: g.stats.filter((s) => s.stat === stat) }))
+      .filter((g) => g.stats.length > 0);
+    if (sortBy === "volume") r = [...r].sort((a, b) => b.volumePence - a.volumePence);
+    else if (sortBy === "name") r = [...r].sort((a, b) => a.subject.name.localeCompare(b.subject.name));
     return r;
-  }, [data, q, category, minAmount, maxAmount, sortBy]);
+  }, [groups, q, stat, fixture, sortBy]);
 
-  const resetFilters = () => {
-    setQ("");
-    setCategory("All");
-    setMinAmount(0);
-    setMaxAmount(2000);
-    setSortBy("relevance");
-  };
+  // Section by fixture when sorted by kick-off
+  const sections = useMemo(() => {
+    if (sortBy !== "kickoff") return [{ id: "all", title: null, items: filtered }];
+    const by = new Map();
+    filtered.forEach((g) => {
+      const k = g.fixture?.id || "none";
+      if (!by.has(k)) by.set(k, { id: k, fixture: g.fixture, items: [] });
+      by.get(k).items.push(g);
+    });
+    return [...by.values()];
+  }, [filtered, sortBy]);
+
+  const reset = () => { setQ(""); setStat("All"); setFixture("all"); setSortBy("kickoff"); };
 
   if (loading) {
-    return (
-      <div className="min-h-screen w-full bg-[#030712] text-slate-100 flex items-center justify-center">
-        <div className="text-xl">Loading markets...</div>
-      </div>
-    );
+    return <div className="min-h-screen w-full bg-[#030712] text-slate-100 flex items-center justify-center"><div className="text-xl">Loading markets...</div></div>;
   }
 
   return (
     <div className="min-h-screen w-full bg-[#030712] text-slate-100 selection:bg-cyan-300 selection:text-black">
-      {/* Background gradients */}
       <div className="pointer-events-none fixed inset-0 opacity-60">
         <div className="absolute inset-0 bg-[radial-gradient(1100px_500px_at_15%_-10%,rgba(0,255,200,0.07),transparent),radial-gradient(1000px_500px_at_85%_110%,rgba(120,60,255,0.08),transparent)]" />
       </div>
 
-      {/* Header with search and filters */}
       <div className="sticky top-0 z-30 border-b border-white/10 backdrop-blur-xl bg-[#030712]/60">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-3 flex items-center gap-3">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-3 flex items-center gap-3 pt-20">
           <div className="flex items-center gap-2 flex-1 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2">
-            <svg
-              className="h-4 w-4 text-slate-400"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <path
-                d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-            </svg>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search markets..."
-              className="bg-transparent outline-none placeholder:text-slate-500 text-slate-100 w-full"
-            />
-            <button
-              onClick={resetFilters}
-              className="text-xs px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition"
-            >
-              Reset
-            </button>
+            <svg className="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" strokeWidth="1.5" /></svg>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search players, teams…" className="bg-transparent outline-none placeholder:text-slate-500 text-slate-100 w-full" />
+            <button onClick={reset} className="text-xs px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition">Reset</button>
           </div>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="hidden sm:block rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm"
-          >
-            <option value="relevance">Relevance</option>
-            <option value="amount-desc">Volume (High → Low)</option>
-            <option value="amount-asc">Volume (Low → High)</option>
-            <option value="newest">Newest</option>
+          <select value={fixture} onChange={(e) => setFixture(e.target.value)} className="hidden sm:block rounded-xl border border-white/10 bg-[#0b1220] px-3 py-2 text-sm max-w-[260px]">
+            <option value="all">All matches</option>
+            {fixtures.map((f) => <option key={f.id} value={f.id}>{f.home} v {f.away}</option>)}
+          </select>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="hidden sm:block rounded-xl border border-white/10 bg-[#0b1220] px-3 py-2 text-sm">
+            <option value="kickoff">Kick-off</option>
+            <option value="volume">Volume</option>
+            <option value="name">Player A–Z</option>
           </select>
         </div>
-
         <div className="max-w-[1600px] mx-auto px-4 md:px-6 pb-3">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
-            <div className="flex flex-wrap gap-2">
-              {categories.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setCategory(c)}
-                  className={`px-3 py-1.5 rounded-full text-sm border ${
-                    category === c
-                      ? "border-emerald-400/60 bg-emerald-300/10 text-emerald-200 shadow-[0_0_24px_rgba(16,185,129,0.25)]"
-                      : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+          <div className="flex flex-wrap gap-2">
+            {stats.map((c) => (
+              <button key={c} onClick={() => setStat(c)}
+                className={`px-3 py-1.5 rounded-full text-sm border capitalize ${stat === c ? "border-emerald-400/60 bg-emerald-300/10 text-emerald-200 shadow-[0_0_24px_rgba(16,185,129,0.25)]" : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"}`}>
+                {c === "All" ? "All stats" : statLabel(c)}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-6">
         <div className="mb-4 text-sm text-slate-400">
-          {filtered.length} markets
+          {filtered.length} players · {filtered.reduce((a, g) => a + g.stats.reduce((x, s) => x + s.lines.length, 0), 0)} markets
         </div>
+        {error && <div className="text-center py-16 text-red-400">Could not load markets: {error}</div>}
+        {!error && filtered.length === 0 && <div className="text-center py-16 text-slate-400">No markets found</div>}
 
-        {filtered.length === 0 ? (
-          <div className="text-center py-16 text-slate-400">
-            No markets found
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
-            {filtered.map((m) => (
-              <CardGrid
-                key={m.id}
-                market={m}
-                selected={selected === m.id}
-                onSelect={() => setSelected((s) => (s === m.id ? null : m.id))}
-              />
-            ))}
-          </div>
-        )}
+        {sections.map((sec) => (
+          <section key={sec.id} className="mb-10">
+            {sec.fixture && (
+              <div className="mb-3 flex items-baseline gap-3">
+                <h2 className="text-lg font-semibold">{sec.fixture.home} <span className="text-slate-500">v</span> {sec.fixture.away}</h2>
+                <span className="text-sm text-slate-400">{kickoffLabel(sec.fixture.kickoff)} · Gameweek {sec.fixture.gameweek}</span>
+              </div>
+            )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-5">
+              {sec.items.map((g) => <PlayerCard key={g.key} g={g} showFixture={sortBy !== "kickoff"} />)}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );
 }
 
-/* ---------- atoms ---------- */
-
-function Tab({ active, onClick, label }) {
+function PlayerCard({ g, showFixture }) {
+  const first = g.stats[0]?.lines[0];
+  const opp = g.fixture ? (g.fixture.isHome ? g.fixture.away : g.fixture.home) : null;
   return (
-    <button
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-sm transition ${
-        active
-          ? "bg-gradient-to-r from-teal-300 to-cyan-300 text-black shadow-[0_8px_30px_-8px_rgba(45,212,191,0.6)]"
-          : "bg-white/5 text-slate-300 hover:bg-white/10"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-function Chip({ label, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="px-3 py-1.5 text-sm rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 backdrop-blur transition"
-    >
-      {label}
-    </button>
-  );
-}
-
-function Badge({ children }) {
-  return (
-    <div className="px-2.5 py-1 rounded-lg border border-white/10 bg-white/[0.05] backdrop-blur text-slate-300">
-      {children}
-    </div>
-  );
-}
-
-function ProgressPulse({ value = 50 }) {
-  return (
-    <div className="w-full h-3 rounded-full bg-white/10 overflow-hidden relative">
-      <div
-        style={{ width: `${value}%` }}
-        className="h-full bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 transition-[width] duration-300"
-      />
-      <div className="absolute inset-0 pointer-events-none [mask-image:radial-gradient(60%_50%_at_30%_50%,black,transparent)] bg-white/20 mix-blend-overlay" />
-    </div>
-  );
-}
-
-/* ---------- cards (no channel/owner in grid) ---------- */
-
-function CardGrid({ market, selected, onSelect }) {
-  const volCompact = formatCurrencyCompact(market.volume);
-  const yesPrice = market.yesPrice;
-  const noPrice = 1 - yesPrice;
-
-  // A price is a probability: 0.46 -> 46%
-  const yesShare = yesPrice * 100;
-
-  // Check if prices are defined before displaying
-  const displayYesPrice = yesPrice ? `${Math.round(yesPrice * 100)}p` : "N/A";
-  const displayNoPrice = noPrice ? `${Math.round(noPrice * 100)}p` : "N/A";
-
-  // Check if event is resolved
-  const isResolved = market.status === "resolved" || market.status === "void";
-
-  return (
-    <SpotlightCard
-      className="!p-2 !m-0"
-      spotlightColor="rgba(0, 229, 255, 0.35)"
-    >
-      <div
-        className={`rounded-2xl border ${
-          selected ? "border-emerald-300/60" : "border-white/10"
-        } bg-white/[0.06] backdrop-blur-xl shadow-[0_20px_80px_-20px_rgba(0,0,0,0.6)] overflow-hidden`}
-      >
-        <Link href={`/bid/${market.id}`} className="block">
-          <div className="relative aspect-[16/9] bg-slate-900">
-            {market.image ? (
-              <Image
-                src={market.image}
-                alt={market.question}
-                fill
-                className="object-cover opacity-85"
-                sizes="(max-width:768px) 100vw, 33vw"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                <div className="text-gray-400 text-sm">No image</div>
-              </div>
-            )}
-
-            <div className="absolute top-2 left-2 text-[11px] px-2 py-1 rounded-md border border-white/10 bg-black/40 backdrop-blur text-slate-200">
-              {market.category}
+    <SpotlightCard className="!p-2 !m-0" spotlightColor="rgba(0, 229, 255, 0.25)">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl shadow-[0_20px_80px_-20px_rgba(0,0,0,0.6)] p-4 space-y-4">
+        <Link href={first ? `/bid/${first.marketId}` : "#"} className="flex items-center gap-3">
+          <PlayerAvatar name={g.subject.name} team={g.subject.team} imageUrl={g.subject.imageUrl} size={52} />
+          <div className="min-w-0">
+            <div className="font-semibold text-slate-100 truncate">{g.subject.name}</div>
+            <div className="text-xs text-slate-400 truncate">
+              {g.subject.team}{g.subject.position ? ` · ${g.subject.position}` : ""}
+              {opp ? ` · ${g.fixture.isHome ? "vs" : "@"} ${opp}` : ""}
             </div>
-
-            {/* Resolved badge overlay */}
-            {isResolved && (
-              <div className="absolute top-2 right-2 text-[11px] px-2 py-1 rounded-md border border-green-400/50 bg-green-500/20 backdrop-blur text-green-300">
-                Resolved
-              </div>
-            )}
+            {showFixture && g.fixture && <div className="text-xs text-slate-500">{kickoffLabel(g.fixture.kickoff)}</div>}
           </div>
         </Link>
-
-        <div className="p-3 space-y-2.5">
-          <h3 className="text-[15px] font-semibold leading-snug text-slate-100 line-clamp-2">
-            {market.question}
-          </h3>
-
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-xs text-slate-300 truncate">
-              <span className="text-xs text-slate-300">Vol: £{volCompact}</span>
-            </div>
-          </div>
-
-          {/* Conditional rendering based on resolved status */}
-          {isResolved ? (
-            <div className="rounded-lg border border-green-400/30 bg-green-400/10 px-3 py-2 text-center">
-              <div className="text-green-300 font-medium text-sm mb-1">
-                Event Resolved
-              </div>
-              <div className="text-green-200 text-xs">
-                Winner:{" "}
-                <span className="font-semibold">{market.resolution}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex-1 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 flex items-center justify-between">
-                <span className="text-emerald-300 font-medium">
-                  {market.optionA}
-                </span>
-                <span className="text-emerald-200 tabular-nums">
-                  {displayYesPrice}
-                </span>
-              </div>
-              <div className="flex-1 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 flex items-center justify-between">
-                <span className="text-red-400 font-medium">
-                  {market.optionB}
-                </span>
-                <span className="text-red-300 tabular-nums">
-                  {displayNoPrice}
-                </span>
-              </div>
-            </div>
-          )}
+        <StatLadders stats={g.stats} />
+        <div className="flex justify-between text-xs text-slate-400 pt-1 border-t border-white/10">
+          <span>{g.stats.reduce((a, s) => a + s.lines.length, 0)} markets</span>
+          <span>Vol {formatPence(g.volumePence)}</span>
         </div>
       </div>
     </SpotlightCard>

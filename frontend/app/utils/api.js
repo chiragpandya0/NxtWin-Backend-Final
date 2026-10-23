@@ -72,6 +72,7 @@ export const api = {
   signup: (b) => request("/api/auth/signup", { method: "POST", body: b, auth: false }),
   login: (b) => request("/api/auth/login", { method: "POST", body: b, auth: false }),
   me: () => request("/api/auth/me"),
+  groups: (qs = "") => request(`/api/market-groups${qs}`, { auth: false }),
   markets: (qs = "") => request(`/api/markets${qs}`, { auth: false }),
   market: (id) => request(`/api/markets/${id}`, { auth: false }),
   history: (id) => request(`/api/markets/${id}/history`, { auth: false }),

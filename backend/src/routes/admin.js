@@ -53,6 +53,7 @@ router.put("/teams/:id", validate(teamBody.partial()), async (req, res) => {
 });
 
 const playerBody = z.object({ name: z.string().min(1), teamId: oid, position: z.string().optional(), externalId: z.string().optional(),
+  imageUrl: z.string().url().max(500).optional(),
   per90: z.record(z.string(), z.number().min(0)).optional(), minutesSample: z.number().min(0).optional(),
   expectedMinutes: z.number().min(0).max(120).optional(), active: z.boolean().optional() });
 router.get("/players", async (req, res) => {
@@ -67,14 +68,14 @@ router.put("/players/:id", validate(playerBody.partial()), async (req, res) => {
 });
 // Bulk import: [{ name, team, position, per90: {shots: 2.1}, minutesSample, expectedMinutes }]; teams matched by name.
 router.post("/players/import", validate(z.object({ players: z.array(z.object({
-  name: z.string().min(1), team: z.string().min(1), position: z.string().optional(),
+  name: z.string().min(1), team: z.string().min(1), position: z.string().optional(), imageUrl: z.string().url().max(500).optional(),
   per90: z.record(z.string(), z.number().min(0)), minutesSample: z.number().min(0).optional(), expectedMinutes: z.number().optional(),
 })).min(1).max(1000) })), async (req, res) => {
   let upserted = 0;
   for (const p of req.body.players) {
     const team = await Team.findOneAndUpdate({ name: p.team }, { $setOnInsert: { name: p.team } }, { upsert: true, new: true });
     await Player.findOneAndUpdate({ name: p.name, teamId: team._id },
-      { name: p.name, teamId: team._id, position: p.position, per90: p.per90, minutesSample: p.minutesSample ?? 0, expectedMinutes: p.expectedMinutes ?? 80 },
+      { name: p.name, teamId: team._id, position: p.position, ...(p.imageUrl && { imageUrl: p.imageUrl }), per90: p.per90, minutesSample: p.minutesSample ?? 0, expectedMinutes: p.expectedMinutes ?? 80 },
       { upsert: true });
     upserted += 1;
   }

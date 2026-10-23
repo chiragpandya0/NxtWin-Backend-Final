@@ -23,13 +23,16 @@ Node 20+. Tests: `npm test` (unit + integration, uses an in-memory replica set).
 - Auth: email + password (bcrypt), 18+ date-of-birth gate, JWT bearer. Admin = `role: admin` (set via `ADMIN_EMAIL`).
 
 ## API
-Public: `GET /api/markets`, `/api/markets/:id`, `/api/markets/:id/history`, `/api/fixtures`, `/api/players/:id/markets`, `/api/leaderboard`.
+Public: `GET /api/market-groups` (markets consolidated per player per fixture, lines laddered), `GET /api/markets`, `/api/markets/:id`, `/api/markets/:id/history`, `/api/fixtures`, `/api/players/:id/markets`, `/api/leaderboard`.
 Auth: `POST /api/auth/signup|login`, `GET /api/auth/me`.
 Trading (Bearer): `POST /api/trade/quote|execute`, `POST /api/accas/quote`, `POST /api/accas`, `POST /api/accas/:id/sell`,
 `GET /api/portfolio`, `GET /api/ledger`, `POST /api/wallet/top-up`.
 Admin (`/api/admin/*`): settings, teams, players (+import), fixtures, generate/open markets, market edit/status/void, results entry,
 settle, correct, users/ledger/adjust, reports (exposure, reconcile, calibration CSV, summary), audit log.
 Sockets: `priceUpdate`, `balanceUpdate`, `marketStatus` (client emits `joinMarket`, `auth` with its token).
+
+## Player images
+Players can have an optional `imageUrl` (set via the admin players import, `"imageUrl": "https://..."`). Without one the frontend shows a generated team-coloured avatar. Real player photos are licensed material (out of Phase 0 scope in the proposal), so only add URLs you have the rights to use.
 
 ## Not verified / open items
 - Sportmonks adapter (`services/ingestion/sportmonks.js`, fixtures only) is unverified against the live API (needs an account).

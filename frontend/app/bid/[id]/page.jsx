@@ -17,6 +17,8 @@ import { Skeleton } from "../../components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { AIResultsCard } from "../../components/AIResultsCard";
+import PlayerAvatar from "../../components/PlayerAvatar";
+import StatLadders, { toStats } from "../../components/StatLadders";
 
 import { api, BASE_URL, getToken } from "../../utils/api";
 import { useUser, refreshUser } from "../../utils/auth";
@@ -52,20 +54,14 @@ function PriceChart({ history, current }) {
   );
 }
 
-function Ladder({ market }) {
-  if (!market.ladder || market.ladder.length < 2) return null;
+// Every line for this player in this match, grouped by stat (same ladders as the markets list).
+function PlayerLines({ market, siblings }) {
+  if (!siblings.length) return null;
+  const who = market.subject?.name || "this player";
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base">Other lines</CardTitle></CardHeader>
-      <CardContent className="flex flex-wrap gap-2">
-        {market.ladder.map((l) => (
-          <Link key={l.id} href={`/bid/${l.id}`}>
-            <Badge variant={l.id === market.id ? "default" : "outline"} className="cursor-pointer text-sm">
-              Over {l.line} · {formatPrice(l.yesPrice)}
-            </Badge>
-          </Link>
-        ))}
-      </CardContent>
+      <CardHeader><CardTitle className="text-base">All lines for {who}</CardTitle></CardHeader>
+      <CardContent><StatLadders stats={toStats(siblings)} activeId={market.id} /></CardContent>
     </Card>
   );
 }
@@ -198,6 +194,7 @@ export default function BidPage() {
   const { user, isSignedIn } = useUser();
   const [market, setMarket] = useState(null);
   const [history, setHistory] = useState([]);
+  const [siblings, setSiblings] = useState([]);
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
@@ -210,6 +207,9 @@ export default function BidPage() {
       const [{ market: m }, { history: h }] = await Promise.all([api.market(id), api.history(id)]);
       setMarket(m);
       setHistory(h);
+      if (m.subjectType === "player") {
+        api.markets(`?player=${m.subjectId}&fixture=${m.fixtureId}`).then((r) => setSiblings(r.markets)).catch(() => setSiblings([]));
+      }
     } catch {
       setMarket(null);
     } finally {
@@ -291,6 +291,17 @@ export default function BidPage() {
                     <Badge variant="outline">Gameweek {market.gameweek}</Badge>
                     {connected ? <Wifi className="h-4 w-4 text-green-500" /> : <WifiOff className="h-4 w-4 text-muted-foreground" />}
                   </div>
+                  {market.subject && (
+                    <div className="flex items-center gap-3 mb-3">
+                      <PlayerAvatar name={market.subject.name} team={market.subject.team} imageUrl={market.subject.imageUrl} size={56} />
+                      <div>
+                        <div className="font-semibold">{market.subject.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {market.subject.team}{market.subject.position ? ` · ${market.subject.position}` : ""}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <h1 className="text-2xl md:text-3xl font-bold mb-4">{market.title}</h1>
                   <Badge variant="outline" className="flex w-fit items-center gap-1"><Clock className="h-3 w-3" />Kick-off {new Date(market.kickoff).toLocaleString()}</Badge>
                 </div>
@@ -307,7 +318,7 @@ export default function BidPage() {
             </Card>
 
             <PriceChart history={history} current={market.yesPrice} />
-            <Ladder market={market} />
+            <PlayerLines market={market} siblings={siblings} />
 
             <Tabs defaultValue="activity" className="w-full">
               <TabsList className="grid w-full grid-cols-3">

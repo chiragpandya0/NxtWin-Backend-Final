@@ -202,6 +202,38 @@ const H = require("./helpers");
     assert.ok(total - 6 * 100000 <= bound * 3, `house lost ${total - 600000}p vs bound ${bound}p`);
   });
 
+  test("market groups: one card per player per fixture, lines laddered, stats ordered", async () => {
+    await H.reset();
+    const w = await H.seedWorld({ lines: [0.5, 1.5, 2.5], p: [0.7, 0.4, 0.15] });
+    const lmsr = require("../src/engine/lmsr");
+    await M("Player").updateOne({ _id: w.player._id }, { imageUrl: "https://example.com/p.jpg" });
+    await M("Market").create({ fixtureId: w.fixture._id, subjectType: "player", subjectId: w.player._id, stat: "goals", line: 0.5,
+      title: "Test Striker goals over 0.5", b: 100, openProb: 0.3, modelProb: 0.3, q: lmsr.seed(0.3, 100), status: "open", kickoff: w.fixture.kickoff, gameweek: 1 });
+    await M("Market").create({ fixtureId: w.fixture._id, subjectType: "player", subjectId: w.player._id, stat: "shots", line: 3.5,
+      title: "draft line", b: 100, openProb: 0.1, modelProb: 0.1, q: lmsr.seed(0.1, 100), status: "draft", kickoff: w.fixture.kickoff, gameweek: 1 });
+    const http = require("http");
+    const fetch = require("node-fetch");
+    const { createApp } = require("../index");
+    const server = http.createServer(createApp());
+    await new Promise((r) => server.listen(0, r));
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const { groups, total } = await (await fetch(base + "/api/market-groups")).json();
+    assert.strictEqual(total, 1);
+    const g = groups[0];
+    assert.strictEqual(g.subject.name, "Test Striker");
+    assert.strictEqual(g.subject.team, "Home FC");
+    assert.strictEqual(g.subject.imageUrl, "https://example.com/p.jpg");
+    assert.strictEqual(g.fixture.home, "Home FC");
+    assert.strictEqual(g.fixture.isHome, true);
+    assert.deepStrictEqual(g.stats.map((s) => s.stat), ["shots", "goals"]); // model order, draft excluded
+    assert.deepStrictEqual(g.stats[0].lines.map((l) => l.line), [0.5, 1.5, 2.5]);
+    assert.ok(g.stats[0].lines[0].yesPrice > g.stats[0].lines[2].yesPrice);
+    assert.strictEqual(g.marketCount, 4);
+    const one = (await (await fetch(base + `/api/markets/${w.markets[0]._id}`)).json()).market;
+    assert.strictEqual(one.subject.name, "Test Striker");
+    await new Promise((r) => server.close(r));
+  });
+
   test("auth: age gate, login, admin role gating", async () => {
     await H.reset();
     const http = require("http");
