@@ -1,13 +1,25 @@
 const mongoose = require("mongoose");
+const env = require("./env");
 
-const connectDB = async () => {
+const connectDB = async (uri = env.mongoUri) => {
+  await mongoose.connect(uri);
+  console.log("MongoDB connected");
+};
+
+// Run fn(session) in a transaction, retrying transient write conflicts.
+const withTx = async (fn) => {
+  const session = await mongoose.startSession();
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("MongoDB connected");
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-    process.exit(1);
+    let result;
+    await session.withTransaction(async () => {
+      result = await fn(session);
+    });
+    return result;
+  } finally {
+    await session.endSession();
   }
 };
 
 module.exports = connectDB;
+module.exports.connectDB = connectDB;
+module.exports.withTx = withTx;
