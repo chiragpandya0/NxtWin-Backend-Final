@@ -80,6 +80,16 @@ for a in apps:
   if command -v docker >/dev/null 2>&1; then
     for c in $(sudo docker ps --filter publish=3000 -q 2>/dev/null || true); do warn "Stopping docker container $c (port 3000)"; sudo docker stop "$c" >/dev/null; done
   fi
+  local pid unit
+  pid="$(sudo ss -ltnp 'sport = :3000' 2>/dev/null | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2 || true)"
+  if [ -n "$pid" ]; then
+    unit="$(ps -o unit= -p "$pid" 2>/dev/null | tr -d ' ' || true)"
+    warn "Port 3000 is held by pid $pid (systemd unit: ${unit:-none}); parent: $(ps -o ppid=,user=,args= -p "$(ps -o ppid= -p "$pid" | tr -d ' ')" 2>/dev/null | cut -c1-100)"
+    case "$unit" in
+      nxtwin-web.service|"") ;;
+      *.service) warn "Disabling unit $unit so it does not restart the old frontend"; sudo systemctl disable --now "$unit" || true ;;
+    esac
+  fi
   if sudo ss -ltnp 'sport = :3000' 2>/dev/null | grep -q LISTEN; then
     warn "Something still listens on :3000, killing it:"; sudo ss -ltnp 'sport = :3000' | tail -n +2
     sudo fuser -k 3000/tcp 2>/dev/null || true; sleep 1
@@ -103,6 +113,17 @@ install_nginx() {
   sudo test -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" || die "No certificate for $DOMAIN. Run: sudo certbot certonly --nginx -d $DOMAIN"
   local site=/etc/nginx/sites-available/probo
   [ -f "$site.bak" ] || { [ -f "$site" ] && sudo cp "$site" "$site.bak"; } || true
+  # Disable any other enabled config for this domain or defining our upstreams (duplicates break nginx)
+  local f
+  for f in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
+    [ -e "$f" ] || [ -L "$f" ] || continue
+    [ "$(basename "$f")" = "probo" ] && continue
+    if sudo grep -qE "server_name[^;]*$DOMAIN|upstream nxtwin_" "$f" 2>/dev/null; then
+      warn "Disabling conflicting nginx config: $f (moved to /etc/nginx/disabled-by-deploy/)"
+      sudo mkdir -p /etc/nginx/disabled-by-deploy
+      sudo mv "$f" "/etc/nginx/disabled-by-deploy/$(basename "$f").$(date +%s)"
+    fi
+  done
   sed "s|probo.insightfusionanalytics.com|$DOMAIN|g" "$REPO/deploy/nginx-probo.conf" | sudo tee "$site" >/dev/null
   sudo ln -sf "$site" /etc/nginx/sites-enabled/probo
   if sudo nginx -t 2>&1; then sudo systemctl reload nginx
