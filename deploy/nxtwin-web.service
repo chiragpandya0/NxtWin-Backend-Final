@@ -1,0 +1,15 @@
+[Unit]
+Description=NxtWin frontend (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=chirag
+WorkingDirectory=/home/chirag/nxt-winn
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
