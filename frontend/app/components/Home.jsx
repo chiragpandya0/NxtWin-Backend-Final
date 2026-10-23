@@ -216,7 +216,7 @@ const Home = () => {
                 NxtWin Prediction Market Simulator
               </h1>
               <p className="text-lg mb-6 text-gray-200">
-                Trade on the outcome of real-world events with simulated funds. Live order books, dynamic pricing and AI-assisted estimates.
+                Trade on the outcome of real-world events with simulated funds. Prices set by an automated market maker, accumulators and AI-assisted estimates.
               </p>
               <Link href="/sign-in">
                 <button className="px-6 py-3 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition">
@@ -348,7 +348,7 @@ const Home = () => {
         <div style={{ flex: "1 1 50%", color: "white" }}>
           <h2 className="text-2xl font-bold mb-4">How It Works</h2>
           <p className="mb-4 text-gray-300">
-            Follow price movements, order book depth and market news across
+            Follow price movements and market news across
             categories, with AI-assisted probability estimates for each question.
           </p>
           <p className="mb-4 text-gray-300">

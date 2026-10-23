@@ -225,7 +225,7 @@ export default function BidPage() {
   useEffect(() => { loadPortfolio(); }, [id, isSignedIn]);
 
   useEffect(() => {
-    const s = io(BASE_URL, { transports: ["websocket", "polling"] });
+    const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || BASE_URL || undefined); // polling first, then upgrades to websocket
     socket.current = s;
     s.on("connect", () => {
       setConnected(true);

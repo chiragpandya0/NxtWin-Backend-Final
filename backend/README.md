@@ -5,6 +5,7 @@ prices every line (no order book), shares pay £1, fees are 2% (configurable). S
 
 ## Run locally
 ```bash
+cd backend
 npm install
 cp .env.example .env        # set MONGODB_URI (a replica set / Atlas: transactions are required) and JWT_SECRET
 ADMIN_EMAIL=you@x.com ADMIN_PASSWORD='change-me-123' node scripts/seed-pl.js   # demo gameweek + admin

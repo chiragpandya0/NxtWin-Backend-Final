@@ -1,12 +1,12 @@
 [Unit]
-Description=NxtWin backend
+Description=NxtWin backend (API + sockets)
 After=network.target
 
 [Service]
 Type=simple
-User=chirag
-WorkingDirectory=/home/chirag/NxtWin-Backend-Final
-ExecStart=/usr/bin/node index.js
+User=@USER@
+WorkingDirectory=@REPO@/backend
+ExecStart=@NODE@ index.js
 Restart=always
 RestartSec=5
 Environment=NODE_ENV=production

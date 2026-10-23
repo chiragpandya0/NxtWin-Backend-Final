@@ -1,5 +1,6 @@
-export const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5500";
+// Same-origin by default: nginx (production) or next.config.mjs rewrites (dev) forward /api and
+// /socket.io to the backend. Set NEXT_PUBLIC_API_URL only to point at a different host.
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 const TOKEN_KEY = "gaffr_token";
 
