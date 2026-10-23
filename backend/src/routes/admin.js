@@ -172,8 +172,14 @@ router.put("/fixtures/:id/results", validate(z.object({ results: z.array(z.objec
   await audit(req, "enter_results", String(f._id), { count: req.body.results.length });
   res.json({ saved: req.body.results.length });
 });
+router.get("/fixtures/:id/results", async (req, res) => {
+  const rows = await MatchStat.find({ fixtureId: req.params.id }).lean();
+  res.json({ results: rows.map((r) => ({ subjectType: r.subjectType, subjectId: r.subjectId, minutes: r.minutes, stats: Object.fromEntries(Object.entries(r.stats || {})) })) });
+});
+router.get("/fixtures/:id/settlement-preview", async (req, res) => res.json(await settlement.previewFixture(req.params.id)));
 router.post("/fixtures/:id/settle", async (req, res) => {
-  const r = await settlement.settleFixture(req.params.id, req.user._id);
+  const r = await settlement.settleFixture(req.params.id, req.user._id, { recheck: req.query.recheck === "1" });
+  await audit(req, "settle_fixture", req.params.id, { ...r, recheck: req.query.recheck === "1" });
   res.json(r);
 });
 // Correct a settled market: reverses the previous payouts and pays the new outcome.

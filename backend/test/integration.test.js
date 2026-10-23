@@ -234,6 +234,42 @@ const H = require("./helpers");
     await new Promise((r) => server.close(r));
   });
 
+  test("settlement preview, partial results void absent players, recheck corrects settled markets", async () => {
+    await H.reset();
+    const w = await H.seedWorld();
+    const other = await M("Player").create({ name: "Other Player", teamId: w.home._id, per90: { shots: 2 }, minutesSample: 900 });
+    const lmsr = require("../src/engine/lmsr");
+    await M("Market").create({ fixtureId: w.fixture._id, subjectType: "player", subjectId: other._id, stat: "shots", line: 0.5,
+      title: "Other shots over 0.5", b: 100, openProb: 0.6, modelProb: 0.6, q: lmsr.seed(0.6, 100), status: "open", kickoff: w.fixture.kickoff, gameweek: 1 });
+    const u = await H.makeUser(email());
+    await trade(u, w.markets[0], "yes", "buy", 10);
+
+    let p = await settlement.previewFixture(w.fixture._id);
+    assert.strictEqual(p.markets, 4); assert.strictEqual(p.undecidable, 4); assert.strictEqual(p.fixtureStatus, "scheduled");
+    assert.strictEqual((await settlement.settleFixture(w.fixture._id)).pending, 4); // not finished: nothing settles
+
+    // Results only for the first player; the other player is absent, so their market voids
+    await M("MatchStat").create({ fixtureId: w.fixture._id, subjectType: "player", subjectId: w.player._id, minutes: 90, stats: { shots: 1 } });
+    await M("Fixture").updateOne({ _id: w.fixture._id }, { status: "finished" });
+    p = await settlement.previewFixture(w.fixture._id);
+    assert.deepStrictEqual(p.wouldSettle, { yes: 1, no: 2, void: 1 });
+    assert.deepStrictEqual(p.voidedPlayers, ["Other Player"]);
+    const r = await settlement.settleFixture(w.fixture._id);
+    assert.strictEqual(r.settled, 4); assert.strictEqual(r.void, 1);
+    assert.strictEqual((await settlement.settleFixture(w.fixture._id)).settled, 0); // idempotent
+
+    // Fix the stored stats and recheck: only the disagreeing markets change, balances stay reconciled
+    const before = (await M("User").findById(u._id)).balancePence;
+    await M("MatchStat").updateOne({ fixtureId: w.fixture._id, subjectId: w.player._id }, { stats: { shots: 0 } });
+    p = await settlement.previewFixture(w.fixture._id);
+    assert.strictEqual(p.changes, 1);
+    assert.strictEqual((await settlement.settleFixture(w.fixture._id)).corrected, 0); // plain settle never touches settled markets
+    const c = await settlement.settleFixture(w.fixture._id, null, { recheck: true });
+    assert.strictEqual(c.corrected, 1);
+    assert.ok((await M("User").findById(u._id)).balancePence < before); // the YES bet no longer wins
+    assert.strictEqual((await reports.reconcile()).ok, true);
+  });
+
   test("auth: age gate, login, admin role gating", async () => {
     await H.reset();
     const http = require("http");

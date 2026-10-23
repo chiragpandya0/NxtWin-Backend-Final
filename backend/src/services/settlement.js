@@ -2,6 +2,7 @@ const { withTx } = require("../config/db");
 const { getSettings } = require("../config/settings");
 const Market = require("../models/Market");
 const Fixture = require("../models/Fixture");
+const Player = require("../models/Player");
 const MatchStat = require("../models/MatchStat");
 const Position = require("../models/Position");
 const Accumulator = require("../models/Accumulator");
@@ -164,20 +165,49 @@ const settleAccumulator = async (accaId) => {
   for (const t of touched) socket.emitBalance(t.userId, t.balancePence);
 };
 
-// Settle every undecided market of a fixture from stored results (used by admin and the cron job).
-const settleFixture = async (fixtureId, actorId = null) => {
+// What settling a fixture would do right now, without changing anything.
+const previewFixture = async (fixtureId) => {
   const s = await getSettings();
   const fixture = await Fixture.findById(fixtureId);
   if (!fixture) throw err(404, "FIXTURE_NOT_FOUND", "Fixture not found");
-  const markets = await Market.find({ fixtureId, status: { $in: ["open", "suspended", "closed"] } });
-  const summary = { settled: 0, pending: 0 };
+  const markets = await Market.find({ fixtureId, status: { $ne: "draft" } });
+  const out = { fixtureStatus: fixture.status, markets: markets.length, settled: 0, unsettled: 0, wouldSettle: { yes: 0, no: 0, void: 0 }, undecidable: 0, changes: 0, voidedPlayers: [] };
+  const voided = new Map();
+  for (const m of markets) {
+    const settled = ["resolved", "void"].includes(m.status);
+    settled ? (out.settled += 1) : (out.unsettled += 1);
+    const next = await resolveFromResults(m, fixture, s);
+    if (!next) { if (!settled) out.undecidable += 1; continue; }
+    if (!settled) out.wouldSettle[next] += 1;
+    else if (next !== m.resolution) out.changes += 1;
+    if (next === "void" && m.subjectType === "player") voided.set(String(m.subjectId), true);
+  }
+  if (voided.size) {
+    const names = await Player.find({ _id: { $in: [...voided.keys()] } }, "name").lean();
+    out.voidedPlayers = names.map((p) => p.name).sort();
+  }
+  return out;
+};
+
+// Settle every undecided market of a fixture from stored results (used by admin and the cron job).
+// With opts.recheck, already-settled markets are re-evaluated and corrected where the stored results disagree.
+const settleFixture = async (fixtureId, actorId = null, opts = {}) => {
+  const s = await getSettings();
+  const fixture = await Fixture.findById(fixtureId);
+  if (!fixture) throw err(404, "FIXTURE_NOT_FOUND", "Fixture not found");
+  const statuses = ["open", "suspended", "closed", ...(opts.recheck ? ["resolved", "void"] : [])];
+  const markets = await Market.find({ fixtureId, status: { $in: statuses } });
+  const summary = { settled: 0, pending: 0, corrected: 0, yes: 0, no: 0, void: 0 };
   for (const m of markets) {
     const resolution = await resolveFromResults(m, fixture, s);
     if (!resolution) { summary.pending += 1; continue; }
+    const wasSettled = ["resolved", "void"].includes(m.status);
+    if (wasSettled && m.resolution === resolution) continue;
     await settleMarket(m._id, resolution, actorId);
-    summary.settled += 1;
+    if (wasSettled) summary.corrected += 1; else summary.settled += 1;
+    summary[resolution] += 1;
   }
   return summary;
 };
 
-module.exports = { settleMarket, settleFixture, settleAccumulator, resolveFromResults };
+module.exports = { settleMarket, settleFixture, previewFixture, settleAccumulator, resolveFromResults };
