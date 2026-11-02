@@ -64,37 +64,13 @@ prepare_env() {
 }
 
 stop_old_frontend() {
-  log "Stopping any old frontend"
+  # Only touches things this repo created: our own unit and our old checkout. Other apps on this server
+  # (other sites, other ports) are never stopped, disabled or killed.
+  log "Stopping our own frontend service (if running)"
   sudo systemctl stop nxtwin-web 2>/dev/null || true
-  if command -v pm2 >/dev/null 2>&1; then
-    local names
-    names="$(pm2 jlist 2>/dev/null | python3 -c '
-import json,sys
-try: apps=json.load(sys.stdin)
-except Exception: apps=[]
-for a in apps:
-    blob=" ".join(str(a.get(k,"")) for k in ("name",)) + " " + " ".join(str(v) for v in a.get("pm2_env",{}).values() if isinstance(v,str))
-    if "nxt" in blob.lower() or "next" in blob.lower(): print(a["name"])
-' || true)"
-    for n in $names; do warn "Removing pm2 app: $n"; pm2 delete "$n" || true; done
-    [ -n "$names" ] && pm2 save >/dev/null 2>&1 || true
-  fi
-  if command -v docker >/dev/null 2>&1; then
-    for c in $(sudo docker ps --filter publish=3000 -q 2>/dev/null || true); do warn "Stopping docker container $c (port 3000)"; sudo docker stop "$c" >/dev/null; done
-  fi
-  local pid unit
-  pid="$(sudo ss -ltnp 'sport = :3000' 2>/dev/null | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2 || true)"
-  if [ -n "$pid" ]; then
-    unit="$(ps -o unit= -p "$pid" 2>/dev/null | tr -d ' ' || true)"
-    warn "Port 3000 is held by pid $pid (systemd unit: ${unit:-none}); parent: $(ps -o ppid=,user=,args= -p "$(ps -o ppid= -p "$pid" | tr -d ' ')" 2>/dev/null | cut -c1-100)"
-    case "$unit" in
-      nxtwin-web.service|"") ;;
-      *.service) warn "Disabling unit $unit so it does not restart the old frontend"; sudo systemctl disable --now "$unit" || true ;;
-    esac
-  fi
-  if sudo ss -ltnp 'sport = :3000' 2>/dev/null | grep -q LISTEN; then
-    warn "Something still listens on :3000, killing it:"; sudo ss -ltnp 'sport = :3000' | tail -n +2
-    sudo fuser -k 3000/tcp 2>/dev/null || true; sleep 1
+  if sudo ss -ltnp 'sport = :3100' 2>/dev/null | grep -q LISTEN; then
+    warn "Port 3100 is in use by something else:"; sudo ss -ltnp 'sport = :3100' | tail -n +2
+    die "Free port 3100 or change the port in deploy/nxtwin-web.service, deploy/nginx-probo.conf and deploy/deploy.sh."
   fi
   local old="/home/$APP_USER/nxt-winn"
   if [ -d "$old" ]; then mv "$old" "$old.old-$(date +%F)"; warn "Renamed old checkout to $old.old-$(date +%F) (delete it when you are happy)"; fi
@@ -149,11 +125,11 @@ deploy_frontend() {
   (cd "$REPO/frontend" && npm ci --no-audit --no-fund && rm -rf .next && npm run build)
   log "Frontend: restarting"
   sudo systemctl restart nxtwin-web
-  wait_for http://127.0.0.1:3000/ 40 || { sudo journalctl -u nxtwin-web -n 25 --no-pager; die "Frontend did not come up"; }
+  wait_for http://127.0.0.1:3100/ 40 || { sudo journalctl -u nxtwin-web -n 25 --no-pager; die "Frontend did not come up"; }
   # The page must reference CSS that actually exists (catches stale or half-built output)
-  local css; css="$(curl -s http://127.0.0.1:3000/ | grep -o '/_next/static/css/[^"]*\.css' | head -1)"
-  [ -n "$css" ] && curl -fsS -o /dev/null "http://127.0.0.1:3000$css" || die "Frontend stylesheet check failed ($css)"
-  curl -fsS -o /dev/null http://127.0.0.1:3000/portfolio || die "Frontend is not serving the new pages"
+  local css; css="$(curl -s http://127.0.0.1:3100/ | grep -o '/_next/static/css/[^"]*\.css' | head -1)"
+  [ -n "$css" ] && curl -fsS -o /dev/null "http://127.0.0.1:3100$css" || die "Frontend stylesheet check failed ($css)"
+  curl -fsS -o /dev/null http://127.0.0.1:3100/portfolio || die "Frontend is not serving the new pages"
   echo "frontend healthy (assets and pages OK)"
 }
 
@@ -167,7 +143,7 @@ public_check() {
 status() {
   systemctl is-active nxtwin nxtwin-web || true
   curl -s -m 3 http://127.0.0.1:5500/health && echo
-  curl -s -m 3 -o /dev/null -w "frontend: %{http_code}\n" http://127.0.0.1:3000/ || true
+  curl -s -m 3 -o /dev/null -w "frontend: %{http_code}\n" http://127.0.0.1:3100/ || true
   git -C "$REPO" log --oneline -1
 }
 
